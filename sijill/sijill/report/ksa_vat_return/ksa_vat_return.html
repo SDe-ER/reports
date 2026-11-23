@@ -24,15 +24,18 @@
 	.ksa-vat[dir="rtl"] .kv-meta td.kv-num { text-align: right; }
 	.ksa-vat .kv-rows { table-layout: fixed; border: 1px solid #d1d8dd; }
 	.ksa-vat .kv-rows th, .ksa-vat .kv-rows td { padding: 3px 6px; border: 1px solid #d1d8dd; vertical-align: middle; }
-	.ksa-vat .kv-rows th { background: #f3f3f3; color: #525252; font-weight: 700; text-align: center; }
+	.ksa-vat .kv-rows th { font-weight: 700; text-align: center; }
 	.ksa-vat .kv-rows thead { display: table-header-group; }
 	.ksa-vat .kv-rows tr { page-break-inside: avoid; break-inside: avoid; }
 	.ksa-vat .kv-rows th.kv-c, .ksa-vat .kv-rows td.kv-c { width: 6%; text-align: center; }
-	.ksa-vat .kv-rows td.kv-c { color: #525252; }
 	.ksa-vat .kv-rows th.kv-n, .ksa-vat .kv-rows td.kv-n { width: 16%; }
 	.ksa-vat .kv-rows td.kv-n { text-align: right; direction: ltr; unicode-bidi: embed; white-space: nowrap; font-variant-numeric: tabular-nums; }
-	.ksa-vat .kv-rows tr.kv-heading td { background: #fafafa; color: #525252; font-weight: 700; }
+	.ksa-vat .kv-rows tr.kv-heading td { background: #fafafa; font-weight: 700; }
 	.ksa-vat .kv-rows tr.kv-total td { background: #f3f3f3; font-weight: 700; border-top: 2px solid #999; }
+	/* The site Print Style can set table header and cell colours with !important. These Sijill-scoped rules carry more
+	   class selectors and !important, so the approved greys win inside this print only. */
+	.ksa-vat .kv-rows thead th.kv-h { background: #f3f3f3 !important; color: #171717 !important; }
+	.ksa-vat .kv-rows tbody td.kv-d { color: #171717 !important; }
 	.ksa-vat .kv-signs { margin-top: 18px; table-layout: fixed; page-break-inside: avoid; break-inside: avoid; }
 	.ksa-vat .kv-signs td { border: none; text-align: center; vertical-align: top; padding: 0 12px; font-weight: 700; color: #525252; }
 	.ksa-vat .kv-signs .kv-line { display: block; border-top: 1px solid #999; margin: 26px 15% 4px; }
@@ -42,36 +45,32 @@
 	<div class="kv-title"><h2>{%= __("VAT Return") %}</h2></div>
 	<table class="kv-meta">
 		<tr>
-			<td class="kv-ml">{%= __("Company") %}</td><td>{%= esc(filters.company || "") %}</td>
 			<td class="kv-ml">{%= __("VAT Registration Number", null, CTX) %}</td><td class="kv-num">{%= esc(first.company_tax_id || "") %}</td>
+			<td class="kv-ml">{%= __("Issue Date", null, CTX) %}</td><td>{%= day(frappe.datetime.get_today()) %}</td>
 		</tr>
 		<tr>
 			<td class="kv-ml">{%= __("From Date") %}</td><td>{%= day(filters.from_date) %}</td>
 			<td class="kv-ml">{%= __("To Date") %}</td><td>{%= day(filters.to_date) %}</td>
 		</tr>
-		<tr>
-			<td class="kv-ml">{%= __("Issue Date", null, CTX) %}</td><td>{%= day(frappe.datetime.get_today()) %}</td>
-			<td></td><td></td>
-		</tr>
 	</table>
 	<table class="kv-rows">
 		<thead>
 			<tr>
-				<th class="kv-c">{%= __("No", null, CTX) %}</th>
+				<th class="kv-h kv-c">{%= __("No", null, CTX) %}</th>
 				{% for (var i = 0; i < columns.length; i++) { %}
-				<th class="{%= columns[i].fieldtype === "Currency" ? "kv-n" : "" %}">{%= esc(columns[i].label || "") %}</th>
+				<th class="kv-h{%= columns[i].fieldtype === "Currency" ? " kv-n" : "" %}">{%= esc(columns[i].label || "") %}</th>
 				{% } %}
 			</tr>
 		</thead>
 		<tbody>
 			{% for (var j = 0; j < data.length; j++) { var row = data[j]; %}
 			<tr class="{%= row.is_heading ? "kv-heading" : (row.bold ? "kv-total" : "") %}">
-				<td class="kv-c">{%= esc(row.no || "") %}</td>
+				<td class="kv-d kv-c">{%= esc(row.no || "") %}</td>
 				{% for (var i = 0; i < columns.length; i++) { %}
 					{% if (columns[i].fieldtype === "Currency") { %}
-					<td class="kv-n">{%= row.is_heading ? "" : fmt(row, columns[i]) %}</td>
+					<td class="kv-d kv-n">{%= row.is_heading ? "" : fmt(row, columns[i]) %}</td>
 					{% } else { %}
-					<td>{%= esc(row[columns[i].fieldname] || "") %}</td>
+					<td class="kv-d">{%= esc(row[columns[i].fieldname] || "") %}</td>
 					{% } %}
 				{% } %}
 			</tr>
