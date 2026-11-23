@@ -1,0 +1,53 @@
+---
+title: تقارير SDCE
+description: تقارير لـ Frappe و ERPNext، قياسية ومختبرة ومدارة بالإصدارات، بدءاً بإقرار ضريبة القيمة المضافة السعودي.
+template: splash
+hero:
+  title: تقاريرك بطريقة ERPNext
+  tagline: تطبيق Frappe واحد للتقارير التي تضيفها إلى ERPNext. كل تقرير قياسي، يُبنى من مستنداتك المرحّلة، ومختبر، ومترجم إلى العربية، ويُثبَّت بأداة bench.
+  image:
+    file: ../../../assets/logo.svg
+  actions:
+    - text: ابدأ هنا
+      link: /reports/ar/getting-started/introduction/
+      icon: left-arrow
+    - text: تصفّح التقارير
+      link: /reports/ar/reports/ksa-vat-return/
+      variant: minimal
+---
+
+import { Card, CardGrid, LinkCard } from "@astrojs/starlight/components";
+
+## ماذا يقدّم التطبيق
+
+<CardGrid>
+	<Card title="إقرار ضريبة القيمة المضافة" icon="document">
+		البنود من 1 إلى 16 بأعمدة المبلغ والتعديلات والضريبة، بنفس ترتيب نموذج الإقرار الرسمي.
+	</Card>
+	<Card title="كل مبلغ له مصدر" icon="magnifier">
+		اضغط على أي مبلغ لتفتح المستندات التي تكوّنه: أرقام الفواتير والأطراف والأرقام الضريبية والمبلغ قبل الضريبة والضريبة.
+	</Card>
+	<Card title="تقارير ERPNext قياسية" icon="approve-check">
+		تقارير برمجية تقرأ الفواتير المعتمدة ودفتر الأستاذ العام، ولا تعدّل أي مستند أو قيد.
+	</Card>
+	<Card title="طباعة و Excel و PDF" icon="download">
+		نماذج طباعة A4، وتصدير Excel أو PDF من قائمة التقرير المعتادة.
+	</Card>
+	<Card title="بدون بيانات شركات" icon="seti:lock">
+		الحسابات والنسب والشركات تُحدَّد من الإعدادات على موقعك. لا شيء مكتوب في الكود، والاختبارات ببيانات وهمية.
+	</Card>
+	<Card title="عربي وإنجليزي" icon="translate">
+		كل الحقول والتقارير ونماذج الطباعة بالعربية (من اليمين لليسار) وبالإنجليزية.
+	</Card>
+</CardGrid>
+
+## ابدأ من هنا
+
+<CardGrid>
+	<LinkCard title="مقدمة" description="ما هو التطبيق وكيف تعمل تقاريره." href="/reports/ar/getting-started/introduction/" />
+	<LinkCard title="التثبيت" description="تثبيت التطبيق على Frappe / ERPNext." href="/reports/ar/getting-started/installation/" />
+	<LinkCard title="الإعدادات" description="الإعدادات التي يحتاجها كل تقرير قبل تشغيله." href="/reports/ar/getting-started/configuration/" />
+	<LinkCard title="إقرار ضريبة القيمة المضافة" description="الإقرار السعودي بنداً بنداً." href="/reports/ar/reports/ksa-vat-return/" />
+	<LinkCard title="الجديد" description="كل تغيير بلغة واضحة." href="/reports/ar/releases/whats-new/" />
+	<LinkCard title="التطوير" description="الاختبارات والفحوص وطريقة إضافة تقرير." href="/reports/ar/getting-started/development/" />
+</CardGrid>

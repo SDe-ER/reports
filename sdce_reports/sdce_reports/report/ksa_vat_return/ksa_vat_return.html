@@ -1,0 +1,59 @@
+{%
+	var columns = report.get_columns_for_print().filter((col) => !col.hidden && col.fieldname !== "no");
+	var first = data[0] || {};
+	var is_blank = (v) => v === null || v === undefined || v === "";
+	var fmt = (row, col) => is_blank(row[col.fieldname]) ? "" : frappe.format(row[col.fieldname], col, { always_show_decimals: true }, row);
+%}
+<style>
+	.ksa-vat { font-size: 9pt; color: #171717; }
+	.ksa-vat .ksa-vat-head { text-align: center; margin-bottom: 14px; }
+	.ksa-vat .ksa-vat-head .company { font-size: 14pt; font-weight: 700; margin: 0; }
+	.ksa-vat .ksa-vat-head .title { font-size: 12pt; font-weight: 600; margin: 2px 0; }
+	.ksa-vat .ksa-vat-head .period { color: #525252; margin: 0; }
+	.ksa-vat table { width: 100%; border-collapse: collapse; }
+	.ksa-vat th { color: #525252; font-weight: 700; border-bottom: 1px solid #aaa; padding: 4px 6px; }
+	.ksa-vat td { padding: 4px 6px; border-bottom: 1px solid #ededed; vertical-align: top; }
+	.ksa-vat td.num, .ksa-vat th.num { width: 16%; text-align: right; white-space: nowrap; }
+	.ksa-vat td.num { direction: ltr; unicode-bidi: embed; font-variant-numeric: tabular-nums; }
+	.ksa-vat tr.heading td { background: #f3f3f3; color: #525252; font-size: 8.5pt; font-weight: 600; }
+	.ksa-vat tr.bold td { font-weight: 700; border-top: 1px solid #aaa; }
+	.ksa-vat .no { width: 4%; text-align: center; color: #525252; }
+	.ksa-vat .generated { color: #7c7c7c; font-size: 8pt; margin-top: 12px; }
+</style>
+<div class="ksa-vat" dir="{%= frappe.utils.is_rtl() ? "rtl" : "ltr" %}">
+	<div class="ksa-vat-head">
+		<p class="company">{%= frappe.utils.escape_html(filters.company || "") %}</p>
+		<p class="title">{%= __("VAT Return") %}</p>
+		{% if (first.company_tax_id) { %}
+		<p class="period">{%= __("VAT Registration Number") %}: {%= frappe.utils.escape_html(first.company_tax_id) %}</p>
+		{% } %}
+		<p class="period">
+			{%= __("For the period from {0} to {1}", [frappe.datetime.str_to_user(filters.from_date), frappe.datetime.str_to_user(filters.to_date)]) %}
+		</p>
+	</div>
+	<table>
+		<thead>
+			<tr>
+				<th class="no">{%= __("No") %}</th>
+				{% for (var i = 0; i < columns.length; i++) { %}
+				<th class="{%= columns[i].fieldtype === "Currency" ? "num" : "" %}">{%= columns[i].label %}</th>
+				{% } %}
+			</tr>
+		</thead>
+		<tbody>
+			{% for (var j = 0; j < data.length; j++) { var row = data[j]; %}
+			<tr class="{%= row.is_heading ? "heading" : (row.bold ? "bold" : "") %}">
+				<td class="no">{%= frappe.utils.escape_html(row.no || "") %}</td>
+				{% for (var i = 0; i < columns.length; i++) { %}
+					{% if (columns[i].fieldtype === "Currency") { %}
+					<td class="num">{%= row.is_heading ? "" : fmt(row, columns[i]) %}</td>
+					{% } else { %}
+					<td>{%= frappe.utils.escape_html(row[columns[i].fieldname] || "") %}</td>
+					{% } %}
+				{% } %}
+			</tr>
+			{% } %}
+		</tbody>
+	</table>
+	<p class="generated">{%= __("Generated on {0}", [frappe.datetime.str_to_user(frappe.datetime.now_datetime())]) %}</p>
+</div>

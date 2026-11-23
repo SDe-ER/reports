@@ -1,0 +1,17 @@
+{
+  "name": "sdce-reports-docs",
+  "private": true,
+  "type": "module",
+  "description": "SDCE Reports documentation site (Astro Starlight), published to GitHub Pages",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "0.42.10",
+    "@fontsource/ibm-plex-sans-arabic": "5.3.0",
+    "astro": "7.4.8",
+    "sharp": "0.35.5"
+  }
+}
