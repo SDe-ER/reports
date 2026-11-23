@@ -6,7 +6,7 @@ sidebar:
 ---
 
 **KSA VAT Return** lays out the Saudi VAT return as fields 1 to 16, with three columns: **Amount**, **Adjustment**
-and **VAT Amount**. Open it by typing its name in the search bar.
+and **VAT Amount**. Open it from the **Sijill** page (apps screen or desktop icon, then the sidebar), or type its name in the search bar.
 
 ## Filters
 

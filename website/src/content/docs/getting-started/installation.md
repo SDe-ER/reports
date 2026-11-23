@@ -23,7 +23,7 @@ bench get-app https://github.com/SDe-ER/reports --branch main
 bench --site <your-site> install-app sijill
 ```
 
-The installer adds the reports and the **KSA VAT Settings** form. It does not change existing documents
+The installer adds the reports, the **KSA VAT Settings** form and the **Sijill** page (sidebar, apps-screen entry and desktop icon). It does not change existing documents
 or settings.
 
 ## Upgrade

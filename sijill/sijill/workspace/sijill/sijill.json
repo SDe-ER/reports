@@ -1,0 +1,97 @@
+{
+ "app": "sijill",
+ "charts": [],
+ "content": "[{\"id\":\"sjl-h-vat\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Saudi VAT</b></span>\",\"col\":12}},{\"id\":\"sjl-s-return\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"KSA VAT Return\",\"col\":4}},{\"id\":\"sjl-s-detail\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"KSA VAT Return Detail\",\"col\":4}},{\"id\":\"sjl-s-settings\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"KSA VAT Settings\",\"col\":4}},{\"id\":\"sjl-sp\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"sjl-c-vat\",\"type\":\"card\",\"data\":{\"card_name\":\"Saudi VAT\",\"col\":4}}]",
+ "creation": "2026-11-23 16:00:00.000000",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "file-text",
+ "idx": 0,
+ "is_hidden": 0,
+ "label": "Sijill",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Saudi VAT",
+   "link_count": 3,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "KSA VAT Return",
+   "link_count": 0,
+   "link_to": "KSA VAT Return",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "KSA VAT Return Detail",
+   "link_count": 0,
+   "link_to": "KSA VAT Return Detail",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "KSA VAT Settings",
+   "link_count": 0,
+   "link_to": "KSA VAT Settings",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-11-23 16:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Sijill",
+ "name": "Sijill",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [
+  {"role": "Accounts User"},
+  {"role": "Accounts Manager"},
+  {"role": "Auditor"},
+  {"role": "System Manager"}
+ ],
+ "sequence_id": 30.0,
+ "shortcuts": [
+  {
+   "color": "Grey",
+   "doc_view": "",
+   "label": "KSA VAT Return",
+   "link_to": "KSA VAT Return",
+   "type": "Report"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "",
+   "label": "KSA VAT Return Detail",
+   "link_to": "KSA VAT Return Detail",
+   "type": "Report"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "KSA VAT Settings",
+   "link_to": "KSA VAT Settings",
+   "type": "DocType"
+  }
+ ],
+ "standard": 1,
+ "title": "Sijill",
+ "type": "Workspace"
+}

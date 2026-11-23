@@ -31,8 +31,10 @@ ruff format sijill && ruff check sijill
 3. تحقّق من صلاحية الشركة ومن الفلاتر قبل أي استعلام.
 4. ضع ما يخص الشركة (الحسابات والنسب) في نموذج إعدادات، لا في الكود.
 5. اكتب الاختبارات في `test_<report_name>.py` بجوار التقرير، ومنها مطابقة إجماليات الملخص مع التفاصيل.
-6. أضف الترجمة العربية لكل نص جديد في `sijill/locale/ar.po`.
-7. أضف صفحة للتقرير في `website/src/content/docs/reports/` (إنجليزي) و `website/src/content/docs/ar/reports/`
+6. أضف التقرير إلى صفحة **سِجِلّ**: رابط في `sijill/sijill/sidebar/sijill/sijill.json` وفي الـ workspace
+   `sijill/sijill/workspace/sijill/sijill.json`. يفشل اختبار إذا غاب أي تقرير من القائمة الجانبية.
+7. أضف الترجمة العربية لكل نص جديد في `sijill/locale/ar.po`.
+8. أضف صفحة للتقرير في `website/src/content/docs/reports/` (إنجليزي) و `website/src/content/docs/ar/reports/`
    (عربي)، وسطراً في صفحة **الجديد**.
 
 ## قواعد

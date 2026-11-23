@@ -32,8 +32,10 @@ ruff format sijill && ruff check sijill
 3. Check the company permission and validate the filters before running any query.
 4. Put company-specific choices (accounts, rates) in a settings DocType, never in the code.
 5. Write tests in `test_<report_name>.py` next to the report, including the totals of the summary against its detail.
-6. Add the Arabic translation of every new label to `sijill/locale/ar.po`.
-7. Add a page for the report under `website/src/content/docs/reports/` (English) and
+6. Add the report to the **Sijill** page: a link in `sijill/sijill/sidebar/sijill/sijill.json` and in the workspace
+   `sijill/sijill/workspace/sijill/sijill.json`. A test fails if a Sijill report is missing from the sidebar.
+7. Add the Arabic translation of every new label to `sijill/locale/ar.po`.
+8. Add a page for the report under `website/src/content/docs/reports/` (English) and
    `website/src/content/docs/ar/reports/` (Arabic), and an entry in **What's new**.
 
 ## Rules

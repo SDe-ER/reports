@@ -14,6 +14,11 @@ upgraded.
 
 ## Next release
 
+### The Sijill page
+
+- New page **Sijill** with the VAT reports and settings in its sidebar, on the apps screen and as a desktop icon.
+  Every report added later appears there too.
+
 ### KSA VAT Return and KSA VAT Return Detail
 
 - New report **KSA VAT Return**: the Saudi VAT return, fields 1 to 16, with amount, adjustment and VAT columns, and
