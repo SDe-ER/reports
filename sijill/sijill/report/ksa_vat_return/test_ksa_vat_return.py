@@ -142,6 +142,38 @@ class TestKSAVATReturn(ERPNextTestSuite):
 		self.assertEqual({line["vat_account"] for line in excluded}, {OUTPUT_VAT, INPUT_VAT})
 		self.assertTrue(all(line["remarks"] for line in excluded))
 
+	def test_vat_payment_through_a_vat_account_is_not_reported(self):
+		"""Paying the authority straight from an Output VAT account is a settlement, not a sale."""
+		make_sales_invoice(rate=1000)
+		bank = frappe.db.get_value(
+			"Account", {"company": COMPANY, "account_type": ("in", ["Bank", "Cash"]), "is_group": 0}, "name"
+		)
+		je = frappe.get_doc(
+			{
+				"doctype": "Journal Entry",
+				"company": COMPANY,
+				"posting_date": nowdate(),
+				"cheque_no": "SADAD-1",
+				"cheque_date": nowdate(),
+				"accounts": [
+					{
+						"account": OUTPUT_VAT,
+						"debit_in_account_currency": 150,
+						"cost_center": f"Main - {ABBR}",
+					},
+					{"account": bank, "credit_in_account_currency": 150, "cost_center": f"Main - {ABBR}"},
+				],
+			}
+		)
+		je.insert()
+		je.submit()
+
+		boxes, _data = self.summary()
+		self.assertEqual((boxes["1"]["adjustment"], boxes["1"]["vat_amount"]), (0, 150))
+
+		_columns, lines = execute_detail(self.filters(show_excluded=1, voucher_type="Journal Entry"))
+		self.assertEqual([(line["category"], line["vat_amount"]) for line in lines], [(EXCLUDED, -150)])
+
 	def test_opening_entries_are_not_reported(self):
 		je = frappe.get_doc(
 			{

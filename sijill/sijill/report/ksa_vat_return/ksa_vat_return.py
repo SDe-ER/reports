@@ -17,6 +17,8 @@ Sources
 Not reported
 - Vouchers whose GL entries only move amounts between the configured VAT accounts (closing a
   return into the VAT Settlement account, paying it, reclassifications).
+- Vouchers that only touch VAT accounts and bank or cash accounts: paying a return to, or
+  receiving a refund from, the tax authority.
 - Opening entries.
 Both are listed by the detail report when "Show Excluded Entries" is set.
 """
@@ -375,7 +377,14 @@ def get_gl_lines(filters, accounts, include_excluded=False):
 				select 1 from `tabGL Entry` o
 				where o.voucher_type = g.voucher_type and o.voucher_no = g.voucher_no
 					and o.is_cancelled = 0 and o.account not in %(all_accounts)s
-			) as has_other_accounts
+			) as has_other_accounts,
+			exists(
+				select 1 from `tabGL Entry` o
+				inner join `tabAccount` oa on oa.name = o.account
+				where o.voucher_type = g.voucher_type and o.voucher_no = g.voucher_no
+					and o.is_cancelled = 0 and o.account not in %(all_accounts)s
+					and ifnull(oa.account_type, '') not in ('Bank', 'Cash')
+			) as has_transaction_accounts
 		from `tabGL Entry` g
 		where g.company = %(company)s
 			and g.is_cancelled = 0
@@ -406,6 +415,8 @@ def get_gl_lines(filters, accounts, include_excluded=False):
 			remarks = _("Opening entry")
 		elif not row.has_other_accounts:
 			remarks = _("Only moves amounts between VAT accounts (settlement or reclassification)")
+		elif not row.has_transaction_accounts:
+			remarks = _("VAT payment or refund (only VAT and bank or cash accounts)")
 
 		if remarks and not include_excluded:
 			continue

@@ -246,3 +246,6 @@ msgstr "مستبعد"
 
 msgid "Account"
 msgstr "الحساب"
+
+msgid "VAT payment or refund (only VAT and bank or cash accounts)"
+msgstr "سداد أو استرداد ضريبة (حسابات ضريبة وبنك أو صندوق فقط)"
