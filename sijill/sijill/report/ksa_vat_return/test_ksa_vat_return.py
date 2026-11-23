@@ -264,7 +264,7 @@ class TestKSAVATReturn(ERPNextTestSuite):
 
 	def test_bank_name_from_the_bank_account(self):
 		"""A row linked to a Bank Account shows the Bank's name, not Bank Account.account_name (the holder)."""
-		bank_ledger = make_bank_vat_journal_entry(0.15)
+		bank_ledger = make_bank_ledger("_Test KSA Bank Ledger")
 		if not frappe.db.exists("Bank", "_Test KSA Bank"):
 			frappe.get_doc({"doctype": "Bank", "bank_name": "_Test KSA Bank"}).insert()
 		bank_account = frappe.get_doc(
@@ -301,8 +301,9 @@ class TestKSAVATReturn(ERPNextTestSuite):
 		je.submit()
 
 		_columns, lines = execute_detail(self.filters(voucher_type="Journal Entry"))
-		names = {line["voucher_no"]: line["party_name"] for line in lines}
-		self.assertEqual(names[je.name], "_Test KSA Bank")
+		self.assertEqual(
+			[(line["voucher_no"], line["party_name"]) for line in lines], [(je.name, "_Test KSA Bank")]
+		)
 
 	def test_reclassification_entries_net_out(self):
 		"""Owner 2026-11-23: VAT removed by a reclassification JE (Dr Output VAT / Cr Sales; Dr Bank Charges /
@@ -677,4 +678,26 @@ def invoice_row(item_row, rate, taxable, vat, voucher_no="PI-1"):
 		bill_no=None,
 		bill_date=None,
 		party_country=None,
+	)
+
+
+def make_bank_ledger(account_name):
+	"""A new Bank-type ledger account of the test company, used by no Bank Account yet."""
+	if frappe.db.exists("Account", f"{account_name} - {ABBR}"):
+		return f"{account_name} - {ABBR}"
+	parent = frappe.db.get_value(
+		"Account", {"company": COMPANY, "account_type": "Bank", "is_group": 1}, "name"
+	) or frappe.db.get_value("Account", {"company": COMPANY, "root_type": "Asset", "is_group": 1}, "name")
+	return (
+		frappe.get_doc(
+			{
+				"doctype": "Account",
+				"account_name": account_name,
+				"parent_account": parent,
+				"company": COMPANY,
+				"account_type": "Bank",
+			}
+		)
+		.insert()
+		.name
 	)

@@ -589,8 +589,9 @@ def get_party_name(party_type, party):
 
 
 def get_bank_name(journal_entry):
-	"""The Bank of the Bank Account set on a row of the Journal Entry, else the account name of its bank or
-	cash ledger account. None when the entry has neither."""
+	"""The Bank of the Bank Account set on the Journal Entry's bank or cash row, else the account name of that
+	bank or cash ledger account. Bank Accounts on other rows (for example a party's) are ignored. None when the
+	entry has no bank or cash row."""
 	fields = ["account"]
 	if frappe.get_meta("Journal Entry Account").has_field("bank_account"):
 		fields.append("bank_account")
@@ -600,11 +601,15 @@ def get_bank_name(journal_entry):
 		fields=fields,
 		order_by="idx",
 	)
-	for row in rows:
+	ledgers = [
+		row
+		for row in rows
+		if frappe.get_cached_value("Account", row.account, "account_type") in ("Bank", "Cash")
+	]
+	for row in ledgers:
 		if row.get("bank_account"):
 			# the Bank's name; Bank Account.account_name is the account holder (the company), not the bank
 			return frappe.get_cached_value("Bank Account", row.bank_account, "bank") or row.bank_account
-	for row in rows:
-		if frappe.get_cached_value("Account", row.account, "account_type") in ("Bank", "Cash"):
-			return frappe.get_cached_value("Account", row.account, "account_name") or row.account
+	for row in ledgers:
+		return frappe.get_cached_value("Account", row.account, "account_name") or row.account
 	return None
