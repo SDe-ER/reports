@@ -335,18 +335,39 @@ def get_invoice_lines(filters, doctype, vat_accounts):
 	)
 
 	company_country = frappe.get_cached_value("Company", filters.company, "country")
-	lines = []
+	grouped = {}
 	for row in rows:
-		rate = flt(row.rate)
+		vat_amount = flt(row.vat_amount)
+		rate = effective_rate(row.rate, row.taxable_amount, vat_amount, row.vat_account)
+		key = (row.voucher_no, rate, row.is_adjustment)
+		if key in grouped:
+			line = grouped[key]
+			line.taxable_amount += flt(row.taxable_amount)
+			line.vat_amount += vat_amount
+			line.vat_accounts.update((row.vat_account or "").split(", "))
+			continue
+		grouped[key] = frappe._dict(
+			row,
+			rate=rate,
+			taxable_amount=flt(row.taxable_amount),
+			vat_amount=vat_amount,
+			vat_accounts=set((row.vat_account or "").split(", ")),
+		)
+
+	lines = []
+	for row in grouped.values():
+		vat_amount = flt(row.vat_amount, 2)
+		# a line is zero rated (or an export) only when it carries no VAT; the stored rate can be 0 for VAT
+		# charged as an "Actual" amount
 		if is_sales:
-			if rate:
+			if vat_amount:
 				category = STANDARD_RATED_SALES
 			elif row.party_country and row.party_country != company_country:
 				category = EXPORTS
 			else:
 				category = ZERO_RATED_SALES
 		else:
-			category = STANDARD_RATED_PURCHASES if rate else ZERO_RATED_PURCHASES
+			category = STANDARD_RATED_PURCHASES if vat_amount else ZERO_RATED_PURCHASES
 
 		lines.append(
 			frappe._dict(
@@ -359,15 +380,38 @@ def get_invoice_lines(filters, doctype, vat_accounts):
 				bill_no=row.bill_no,
 				bill_date=row.bill_date,
 				category=category,
-				rate=rate,
+				rate=row.rate,
 				is_adjustment=row.is_adjustment,
 				taxable_amount=flt(row.taxable_amount, 2),
-				vat_amount=flt(row.vat_amount, 2),
-				vat_account=row.vat_account,
+				vat_amount=vat_amount,
+				vat_account=", ".join(sorted(a for a in row.vat_accounts if a)),
 				remarks=None,
 			)
 		)
 	return lines
+
+
+STANDARD_RATES = (15.0, 5.0)
+
+
+def effective_rate(stored_rate, taxable_amount, vat_amount, vat_account):
+	"""The VAT rate of an invoice line. Item Wise Tax Detail stores rate 0 for a tax row of charge type
+	"Actual" although the row carries VAT: then the Tax Rate of the VAT account is used, else the rate
+	implied by the amounts (snapped to a standard rate within 0.5 points)."""
+	rate = flt(stored_rate)
+	if rate or not flt(vat_amount):
+		return rate
+	for account in (vat_account or "").split(", "):
+		account_rate = flt(frappe.get_cached_value("Account", account, "tax_rate")) if account else 0
+		if account_rate:
+			return account_rate
+	if flt(taxable_amount):
+		implied = abs(flt(vat_amount) / flt(taxable_amount) * 100)
+		for standard in STANDARD_RATES:
+			if abs(implied - standard) <= 0.5:
+				return standard
+		return flt(implied, 2)
+	return 0.0
 
 
 def get_gl_lines(filters, accounts, include_excluded=False):
@@ -440,6 +484,10 @@ def get_gl_lines(filters, accounts, include_excluded=False):
 			category = STANDARD_RATED_SALES if is_output else STANDARD_RATED_PURCHASES
 
 		party_type, party = get_voucher_party(row.voucher_type, row.voucher_no, is_output)
+		party_name = get_party_name(party_type, party)
+		if not party and row.voucher_type == "Journal Entry":
+			# no customer or supplier: name the bank (or cash) the entry was paid through; no tax ID
+			party_name = get_bank_name(row.voucher_no)
 		bill_no, bill_date = get_voucher_reference(row.voucher_type, row.voucher_no)
 		lines.append(
 			frappe._dict(
@@ -448,7 +496,7 @@ def get_gl_lines(filters, accounts, include_excluded=False):
 				voucher_no=row.voucher_no,
 				party_type=party_type,
 				party=party,
-				party_name=get_party_name(party_type, party),
+				party_name=party_name,
 				bill_no=bill_no,
 				bill_date=bill_date,
 				category=category,
@@ -499,3 +547,25 @@ def get_party_name(party_type, party):
 		return None
 	field = "customer_name" if party_type == "Customer" else "supplier_name"
 	return frappe.get_cached_value(party_type, party, field)
+
+
+def get_bank_name(journal_entry):
+	"""The Bank Account (bank and account name) or the bank / cash ledger account of a Journal Entry."""
+	fields = ["account"]
+	if frappe.get_meta("Journal Entry Account").has_field("bank_account"):
+		fields.append("bank_account")
+	rows = frappe.get_all(
+		"Journal Entry Account",
+		filters={"parent": journal_entry, "parenttype": "Journal Entry"},
+		fields=fields,
+		order_by="idx",
+	)
+	for row in rows:
+		if row.get("bank_account"):
+			return (
+				frappe.get_cached_value("Bank Account", row.bank_account, "account_name") or row.bank_account
+			)
+	for row in rows:
+		if frappe.get_cached_value("Account", row.account, "account_type") in ("Bank", "Cash"):
+			return frappe.get_cached_value("Account", row.account, "account_name") or row.account
+	return None

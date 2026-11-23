@@ -6,6 +6,16 @@ All notable changes to Sijill are recorded here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+- Invoices whose VAT row is an "Actual" amount (Item Wise Tax Detail stores rate 0) are reported as standard rated at
+  the VAT account's Tax Rate (or the rate implied by the amounts, snapped to 15% / 5% within 0.5 points) instead of
+  zero rated: their amounts move from field 10 (or 3) to field 7 (or 1). Fields 12, 13 and 16 do not change. A line is
+  zero rated only when it carries no VAT.
+- KSA VAT Return Detail: a Journal Entry without a customer or supplier shows the bank (Bank Account, else the bank or
+  cash account name) as party name; no tax ID is shown for it.
+- Reclassification Journal Entries (Dr Output VAT / Cr revenue; Dr expense / Cr Input VAT) net against the original
+  entry in the return; a test covers it.
+
 ### Changed
 - KSA VAT Return print: the table header is #f3f3f3 and the table text #171717 (section-heading rows and the No column included),
   with the grey heading/total row fills and #d1d8dd borders, also when the site Print Style sets other colours with
