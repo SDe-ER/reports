@@ -333,11 +333,24 @@ def get_invoice_lines(filters, doctype, vat_accounts):
 	)
 
 	company_country = frappe.get_cached_value("Company", filters.company, "country")
+	# the non-zero stored rates of each item: an "Actual" row (stored rate 0) next to a rate row of the same item
+	# takes that rate when the VAT account has no Tax Rate (no second line at an implied rate, review of #20)
+	item_rates = {}
+	for row in rows:
+		if flt(row.rate):
+			item_rates.setdefault((row.voucher_no, row.item_row), set()).add(flt(row.rate))
 	# item level: one taxable amount per item and effective rate, VAT summed over its tax rows
 	items = {}
 	for row in rows:
 		accounts = set(filter(None, (row.vat_account or "").split(ACCOUNT_SEP)))
-		rate = effective_rate(row.rate, row.taxable_amount, row.vat_amount, accounts)
+		own = item_rates.get((row.voucher_no, row.item_row)) or set()
+		rate = effective_rate(
+			row.rate,
+			row.taxable_amount,
+			row.vat_amount,
+			accounts,
+			item_rate=next(iter(own)) if len(own) == 1 else None,
+		)
 		key = (row.voucher_no, row.item_row, rate, row.is_adjustment)
 		if key in items:
 			item = items[key]
@@ -407,10 +420,11 @@ STANDARD_RATES = (15.0, 5.0)
 ACCOUNT_SEP = chr(31)
 
 
-def effective_rate(stored_rate, taxable_amount, vat_amount, vat_accounts):
+def effective_rate(stored_rate, taxable_amount, vat_amount, vat_accounts, item_rate=None):
 	"""The VAT rate of an invoice line. Item Wise Tax Detail stores rate 0 for a tax row of charge type
-	"Actual" although the row carries VAT: then the Tax Rate of the VAT account is used, else the rate
-	implied by the amounts (snapped to a standard rate within 0.5 points)."""
+	"Actual" although the row carries VAT: then the Tax Rate of the VAT account is used, else the item's own
+	stored rate (when its other VAT row has exactly one), else the rate implied by the amounts (snapped to a
+	standard rate within 0.5 points)."""
 	rate = flt(stored_rate)
 	if rate or not flt(vat_amount):
 		return rate
@@ -418,6 +432,8 @@ def effective_rate(stored_rate, taxable_amount, vat_amount, vat_accounts):
 		account_rate = flt(frappe.get_cached_value("Account", account, "tax_rate"))
 		if account_rate:
 			return account_rate
+	if item_rate:
+		return flt(item_rate)
 	if flt(taxable_amount):
 		implied = abs(flt(vat_amount) / flt(taxable_amount) * 100)
 		for standard in STANDARD_RATES:

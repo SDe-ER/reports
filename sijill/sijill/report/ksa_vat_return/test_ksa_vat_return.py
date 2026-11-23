@@ -223,6 +223,21 @@ class TestKSAVATReturn(ERPNextTestSuite):
 		self.assertEqual(boxes["10"]["amount"], 0)
 		self.assertEqual((boxes["12"]["amount"], boxes["12"]["vat_amount"]), (1000, 155))
 
+	def test_actual_row_without_account_tax_rate(self):
+		"""VAT account without a Tax Rate: an "Actual" row next to a 15% row of the same item takes the item's 15%
+		(no second line at the 0.5% the Actual amount alone implies); an Actual-only invoice takes the implied rate
+		snapped to 15%."""
+		frappe.db.set_value("Account", INPUT_VAT, "tax_rate", 0)
+		frappe.clear_cache()
+		make_purchase_invoice(rate=1000, bill_no="SUP-MIX-2", extra_actual_vat=5)
+		make_purchase_invoice(rate=869.57, bill_no="SUP-ACT-2", actual_vat=130.44)
+
+		boxes, _data = self.summary()
+		self.assertEqual((boxes["7"]["amount"], boxes["7"]["vat_amount"]), (1869.57, 285.44))
+		self.assertEqual(boxes["10"]["amount"], 0)
+		_columns, lines = execute_detail(self.filters(voucher_type="Purchase Invoice"))
+		self.assertEqual(sorted(line["rate"] for line in lines), [15, 15])
+
 	def test_zero_rated_line_stays_zero_rated(self):
 		make_purchase_invoice(rate=400, bill_no="SUP-ZERO-1", vat_rate=0)
 
