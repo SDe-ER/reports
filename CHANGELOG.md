@@ -6,6 +6,8 @@ All notable changes to Sijill are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-11-23
+
 ### Added
 - **Sijill workspace**: a page of its own named Sijill (سِجِلّ) with the two VAT reports and KSA VAT Settings, a
   sidebar, an apps-screen entry and a desktop icon. Every new report is added to it; a test checks the sidebar lists
@@ -50,6 +52,7 @@ All notable changes to Sijill are recorded here. The format follows
   documents, ledger entries or permissions.
 - Rollback: `bench --site <site> uninstall-app sijill` removes the reports and settings only.
 
-[Unreleased]: https://github.com/SDe-ER/reports/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/SDe-ER/reports/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/SDe-ER/reports/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/SDe-ER/reports/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/SDe-ER/reports/releases/tag/v0.1.0
