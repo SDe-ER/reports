@@ -1,0 +1,43 @@
+{
+ "actions": [],
+ "creation": "2026-11-23 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "account",
+  "vat_account_type"
+ ],
+ "fields": [
+  {
+   "fieldname": "account",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Account",
+   "options": "Account",
+   "reqd": 1
+  },
+  {
+   "description": "Output VAT: VAT charged on sales. Input VAT: VAT paid on purchases. VAT Settlement: the account that receives the VAT balance when a return is closed or paid, and any clearing account between VAT accounts. Entries that only move amounts between these accounts are not reported.",
+   "fieldname": "vat_account_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "VAT Account Type",
+   "options": "Output VAT\nInput VAT\nVAT Settlement",
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-11-23 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SDCE Reports",
+ "name": "KSA VAT Account",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
