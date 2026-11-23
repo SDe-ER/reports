@@ -6,6 +6,8 @@ All notable changes to Sijill are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-11-24
+
 ### Fixed
 - KSA VAT Return field 14 label: corrections from previous periods "between SAR ±15,000" (was ±5,000), per ZATCA
   "Guideline for Tax Invoicing and Records under VAT Provisions", Version 3 (May 2026), section 10.4 and Implementing
@@ -79,7 +81,8 @@ All notable changes to Sijill are recorded here. The format follows
   documents, ledger entries or permissions.
 - Rollback: `bench --site <site> uninstall-app sijill` removes the reports and settings only.
 
-[Unreleased]: https://github.com/SDe-ER/reports/compare/v0.1.3...HEAD
+[Unreleased]: https://github.com/SDe-ER/reports/compare/v0.1.4...HEAD
+[0.1.4]: https://github.com/SDe-ER/reports/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/SDe-ER/reports/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/SDe-ER/reports/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/SDe-ER/reports/compare/v0.1.0...v0.1.1
