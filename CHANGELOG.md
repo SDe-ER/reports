@@ -6,6 +6,10 @@ All notable changes to Sijill are recorded here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+- KSA VAT Return Detail: a Journal Entry linked to a Bank Account shows the Bank's name; 0.1.3 showed the Bank Account's
+  account holder (the company).
+
 ## [0.1.3] - 2026-11-24
 
 ### Fixed

@@ -262,6 +262,49 @@ class TestKSAVATReturn(ERPNextTestSuite):
 		self.assertFalse(lines[0]["party"])
 		self.assertFalse(lines[0].get("tax_id"))
 
+	def test_bank_name_from_the_bank_account(self):
+		"""A row linked to a Bank Account shows the Bank's name, not Bank Account.account_name (the holder)."""
+		bank_ledger = make_bank_ledger("_Test KSA Bank Ledger")
+		if not frappe.db.exists("Bank", "_Test KSA Bank"):
+			frappe.get_doc({"doctype": "Bank", "bank_name": "_Test KSA Bank"}).insert()
+		bank_account = frappe.get_doc(
+			{
+				"doctype": "Bank Account",
+				"account_name": COMPANY,
+				"bank": "_Test KSA Bank",
+				"is_company_account": 1,
+				"company": COMPANY,
+				"account": bank_ledger,
+			}
+		).insert()
+		je = frappe.get_doc(
+			{
+				"doctype": "Journal Entry",
+				"company": COMPANY,
+				"posting_date": nowdate(),
+				"accounts": [
+					{
+						"account": INPUT_VAT,
+						"debit_in_account_currency": 3.75,
+						"cost_center": f"Main - {ABBR}",
+					},
+					{
+						"account": bank_ledger,
+						"bank_account": bank_account.name,
+						"credit_in_account_currency": 3.75,
+						"cost_center": f"Main - {ABBR}",
+					},
+				],
+			}
+		)
+		je.insert()
+		je.submit()
+
+		_columns, lines = execute_detail(self.filters(voucher_type="Journal Entry"))
+		self.assertEqual(
+			[(line["voucher_no"], line["party_name"]) for line in lines], [(je.name, "_Test KSA Bank")]
+		)
+
 	def test_reclassification_entries_net_out(self):
 		"""Owner 2026-11-23: VAT removed by a reclassification JE (Dr Output VAT / Cr Sales; Dr Bank Charges /
 		Cr Input VAT) instead of cancelling the original entry. The return nets both to zero VAT."""
@@ -635,4 +678,26 @@ def invoice_row(item_row, rate, taxable, vat, voucher_no="PI-1"):
 		bill_no=None,
 		bill_date=None,
 		party_country=None,
+	)
+
+
+def make_bank_ledger(account_name):
+	"""A new Bank-type ledger account of the test company, used by no Bank Account yet."""
+	if frappe.db.exists("Account", f"{account_name} - {ABBR}"):
+		return f"{account_name} - {ABBR}"
+	parent = frappe.db.get_value(
+		"Account", {"company": COMPANY, "account_type": "Bank", "is_group": 1}, "name"
+	) or frappe.db.get_value("Account", {"company": COMPANY, "root_type": "Asset", "is_group": 1}, "name")
+	return (
+		frappe.get_doc(
+			{
+				"doctype": "Account",
+				"account_name": account_name,
+				"parent_account": parent,
+				"company": COMPANY,
+				"account_type": "Bank",
+			}
+		)
+		.insert()
+		.name
 	)
