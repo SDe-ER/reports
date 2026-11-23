@@ -230,3 +230,9 @@ msgstr "اسم العميل / المورد"
 msgctxt "KSA VAT Return"
 msgid "Taxable Amount"
 msgstr "المبلغ قبل الضريبة"
+
+msgid "Sijill"
+msgstr "سِجِلّ"
+
+msgid "Saudi VAT"
+msgstr "ضريبة القيمة المضافة السعودية"

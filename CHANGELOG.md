@@ -6,6 +6,14 @@ All notable changes to Sijill are recorded here. The format follows
 
 ## [Unreleased]
 
+### Added
+- **Sijill workspace**: a page of its own named Sijill (سِجِلّ) with the two VAT reports and KSA VAT Settings, a
+  sidebar, an apps-screen entry and a desktop icon. Every new report is added to it; a test checks the sidebar lists
+  every Sijill report.
+
+### Changed
+- `app_logo_url` removed from hooks so the app never replaces the site's own navbar / login logo.
+
 ## [0.1.1] - 2026-11-23
 
 ### Fixed

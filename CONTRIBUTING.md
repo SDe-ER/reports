@@ -46,9 +46,10 @@ ruff format sijill && ruff check sijill
 4. Update `CHANGELOG.md` under **Unreleased**, and the docs site: "What's new" in English and Arabic
    (`website/src/content/docs/releases/whats-new.md`, `website/src/content/docs/ar/releases/whats-new.md`) and the
    page of every report you add or change.
-5. Add the Arabic translation of every new label to `sijill/locale/ar.po`.
-6. Ensure CI is green (tests on Frappe and ERPNext version-16, CodeQL, docs build).
-7. A maintainer review is required (see `.github/CODEOWNERS`).
+5. Add every new report to the **Sijill** page (sidebar and workspace). A test checks the sidebar.
+6. Add the Arabic translation of every new label to `sijill/locale/ar.po`.
+7. Ensure CI is green (tests on Frappe and ERPNext version-16, CodeQL, docs build).
+8. A maintainer review is required (see `.github/CODEOWNERS`).
 
 The [development guide](https://sde-er.github.io/reports/getting-started/development/) explains how to add a report.
 
