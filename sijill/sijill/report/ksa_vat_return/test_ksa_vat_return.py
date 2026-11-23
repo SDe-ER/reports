@@ -212,6 +212,17 @@ class TestKSAVATReturn(ERPNextTestSuite):
 			[(line["category"], line["rate"]) for line in lines], [(STANDARD_RATED_PURCHASES, 15)]
 		)
 
+	def test_actual_row_next_to_a_rate_row_is_counted_once(self):
+		"""One item with a 15% row and an "Actual" row on the VAT account: both map to 15%, the item's taxable amount
+		is counted once (review of #20)."""
+		pi = make_purchase_invoice(rate=1000, bill_no="SUP-MIX-1", extra_actual_vat=5)
+		self.assertEqual(pi.total_taxes_and_charges, 155)
+
+		boxes, _data = self.summary()
+		self.assertEqual((boxes["7"]["amount"], boxes["7"]["vat_amount"]), (1000, 155))
+		self.assertEqual(boxes["10"]["amount"], 0)
+		self.assertEqual((boxes["12"]["amount"], boxes["12"]["vat_amount"]), (1000, 155))
+
 	def test_zero_rated_line_stays_zero_rated(self):
 		make_purchase_invoice(rate=400, bill_no="SUP-ZERO-1", vat_rate=0)
 
@@ -226,7 +237,7 @@ class TestKSAVATReturn(ERPNextTestSuite):
 		self.assertEqual(len(lines), 1)
 		self.assertEqual(lines[0]["party_name"], frappe.db.get_value("Account", bank, "account_name"))
 		self.assertFalse(lines[0]["party"])
-		self.assertFalse(lines[0]["tax_id"])
+		self.assertFalse(lines[0].get("tax_id"))
 
 	def test_reclassification_entries_net_out(self):
 		"""Owner 2026-11-23: VAT removed by a reclassification JE (Dr Output VAT / Cr Sales; Dr Bank Charges /
@@ -234,13 +245,7 @@ class TestKSAVATReturn(ERPNextTestSuite):
 		make_vat_journal_entry(net=100)
 		reclass(OUTPUT_VAT, f"Sales - {ABBR}", 15, debit_vat=True)
 		make_bank_vat_journal_entry(30)
-		reclass(
-			INPUT_VAT,
-			frappe.db.get_value(
-				"Account", {"company": COMPANY, "root_type": "Expense", "is_group": 0}, "name"
-			),
-			30,
-		)
+		reclass(INPUT_VAT, f"Cost of Goods Sold - {ABBR}", 30)
 
 		boxes, _data = self.summary()
 		self.assertEqual(boxes["1"]["vat_amount"], 0)
@@ -447,8 +452,9 @@ def make_sales_invoice(rate, vat_rate=15, customer=CUSTOMER):
 	return si
 
 
-def make_purchase_invoice(rate, bill_no, vat_rate=15, actual_vat=None):
-	"""actual_vat: VAT as an "Actual" amount (Item Wise Tax Detail then stores rate 0)."""
+def make_purchase_invoice(rate, bill_no, vat_rate=15, actual_vat=None, extra_actual_vat=None):
+	"""actual_vat: VAT as an "Actual" amount (Item Wise Tax Detail then stores rate 0).
+	extra_actual_vat: a second, "Actual" VAT row next to the On Net Total row."""
 	tax = {
 		"charge_type": "On Net Total",
 		"category": "Total",
@@ -480,7 +486,12 @@ def make_purchase_invoice(rate, bill_no, vat_rate=15, actual_vat=None):
 					"cost_center": f"Main - {ABBR}",
 				}
 			],
-			"taxes": [tax],
+			"taxes": [tax]
+			+ (
+				[dict(tax, charge_type="Actual", rate=0, tax_amount=extra_actual_vat, description="VAT adj")]
+				if extra_actual_vat
+				else []
+			),
 		}
 	)
 	pi.insert()
