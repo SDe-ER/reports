@@ -61,8 +61,8 @@ msgstr ""
 "الشركة {0} ليست في المملكة العربية السعودية. إقرار ضريبة القيمة المضافة متاح"
 " لشركات المملكة العربية السعودية فقط."
 
-msgid "Corrections from previous period (between SAR ±5,000)"
-msgstr "التصحيحات من الفترات السابقة (بين ±5,000 ريال)"
+msgid "Corrections from previous period (between SAR ±15,000)"
+msgstr "التصحيحات من الفترات السابقة (بين ±15,000 ريال)"
 
 msgid "Exempt purchases"
 msgstr "المشتريات المعفاة"

@@ -7,6 +7,9 @@ All notable changes to Sijill are recorded here. The format follows
 ## [Unreleased]
 
 ### Fixed
+- KSA VAT Return field 14 label: corrections from previous periods "between SAR ±15,000" (was ±5,000), per ZATCA
+  "Guideline for Tax Invoicing and Records under VAT Provisions", Version 3 (May 2026), section 10.4 and Implementing
+  Regulations Article 63.
 - KSA VAT Return Detail: a Journal Entry linked to a Bank Account shows the Bank's name; 0.1.3 showed the Bank Account's
   account holder (the company).
 

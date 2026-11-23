@@ -226,7 +226,7 @@ def get_data(lines):
 	net_vat = flt(total_sales["vat_amount"] - total_purchases["vat_amount"], 2)
 	append("", _("VAT Due"), heading=1)
 	append("13", _("Total VAT due for current period"), {"vat_amount": net_vat}, side="All", bold=1)
-	append("14", _("Corrections from previous period (between SAR ±5,000)"), {"vat_amount": 0.0})
+	append("14", _("Corrections from previous period (between SAR ±15,000)"), {"vat_amount": 0.0})
 	append("15", _("VAT credit carried forward from previous period(s)"), {"vat_amount": 0.0})
 	append("16", _("Net VAT due (or claim)"), {"vat_amount": net_vat}, side="All", bold=1)
 
