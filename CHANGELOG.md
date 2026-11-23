@@ -6,16 +6,16 @@ All notable changes to Sijill are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-23
+
 ### Fixed
 - VAT that a bank charges on its fees (Dr Input VAT, Cr Bank) is reported in field 7 again. Only entries that
   reduce a VAT account against bank or cash (paying the authority, receiving a refund) are excluded as settlements.
-
-### Fixed
 - The Arabic catalogue no longer re-translates strings that Frappe, ERPNext or HRMS already translate (for
   example "No", "Amount", "Voucher No"). Report-specific wording uses the translation context
   "KSA VAT Return", so the rest of the site keeps its own Arabic labels. A test blocks such overrides.
   "VAT Amount" and "VAT Registration Number" (translated by ksa_compliance) use the same context; the test now
-  checks every installed app.
+  checks every installed app. (This fix is already in the v0.1.0 tag; the 0.1.0 notes did not list it.)
 
 ## [0.1.0] - 2026-11-23
 
@@ -39,5 +39,6 @@ All notable changes to Sijill are recorded here. The format follows
   documents, ledger entries or permissions.
 - Rollback: `bench --site <site> uninstall-app sijill` removes the reports and settings only.
 
-[Unreleased]: https://github.com/SDe-ER/reports/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/SDe-ER/reports/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/SDe-ER/reports/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/SDe-ER/reports/releases/tag/v0.1.0
