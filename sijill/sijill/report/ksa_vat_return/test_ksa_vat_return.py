@@ -174,6 +174,14 @@ class TestKSAVATReturn(ERPNextTestSuite):
 		_columns, lines = execute_detail(self.filters(show_excluded=1, voucher_type="Journal Entry"))
 		self.assertEqual([(line["category"], line["vat_amount"]) for line in lines], [(EXCLUDED, -150)])
 
+	def test_vat_account_without_tax_rate(self):
+		frappe.db.set_value("Account", OUTPUT_VAT, "tax_rate", 0)
+		frappe.clear_cache()
+		make_vat_journal_entry(net=100)
+		boxes, _data = self.summary()
+		self.assertEqual((boxes["1"]["amount"], boxes["1"]["vat_amount"]), (0, 15))
+		self.assertEqual(boxes["3"]["amount"], 0)
+
 	def test_opening_entries_are_not_reported(self):
 		je = frappe.get_doc(
 			{

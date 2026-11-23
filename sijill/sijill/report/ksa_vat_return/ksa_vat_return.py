@@ -425,10 +425,10 @@ def get_gl_lines(filters, accounts, include_excluded=False):
 		taxable_amount = flt(vat_amount * 100 / rate, 2) if rate else 0.0
 		if remarks:
 			category = EXCLUDED
-		elif is_output:
-			category = STANDARD_RATED_SALES if rate else ZERO_RATED_SALES
 		else:
-			category = STANDARD_RATED_PURCHASES if rate else ZERO_RATED_PURCHASES
+			# a voucher that posts VAT is standard rated; without a tax rate on the account its taxable
+			# amount cannot be derived and stays zero
+			category = STANDARD_RATED_SALES if is_output else STANDARD_RATED_PURCHASES
 
 		party_type, party = get_voucher_party(row.voucher_type, row.voucher_no, is_output)
 		bill_no, bill_date = get_voucher_reference(row.voucher_type, row.voucher_no)
