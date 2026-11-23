@@ -333,6 +333,51 @@ def get_invoice_lines(filters, doctype, vat_accounts):
 	)
 
 	company_country = frappe.get_cached_value("Company", filters.company, "country")
+	grouped = group_by_effective_rate(rows)
+
+	lines = []
+	for row in grouped.values():
+		vat_amount = flt(row.vat_amount, 2)
+		# a line is zero rated (or an export) only when it carries no VAT; the stored rate can be 0 for VAT
+		# charged as an "Actual" amount
+		if is_sales:
+			if vat_amount:
+				category = STANDARD_RATED_SALES
+			elif row.party_country and row.party_country != company_country:
+				category = EXPORTS
+			else:
+				category = ZERO_RATED_SALES
+		else:
+			category = STANDARD_RATED_PURCHASES if vat_amount else ZERO_RATED_PURCHASES
+
+		lines.append(
+			frappe._dict(
+				posting_date=row.posting_date,
+				voucher_type=doctype,
+				voucher_no=row.voucher_no,
+				party_type="Customer" if is_sales else "Supplier",
+				party=row.party,
+				party_name=row.party_name,
+				bill_no=row.bill_no,
+				bill_date=row.bill_date,
+				category=category,
+				rate=row.rate if vat_amount else 0.0,
+				is_adjustment=row.is_adjustment,
+				taxable_amount=flt(row.taxable_amount, 2),
+				vat_amount=vat_amount,
+				vat_account=", ".join(sorted(a for a in row.vat_accounts if a)),
+				remarks=None,
+			)
+		)
+	return lines
+
+
+STANDARD_RATES = (15.0, 5.0)
+
+
+def group_by_effective_rate(rows):
+	"""Invoice rows (one per invoice, item row and stored rate) -> one row per invoice, effective rate and
+	adjustment flag. An item's taxable amount is counted once per effective rate."""
 	# the non-zero stored rates of each item: an "Actual" row (stored rate 0) next to a rate row of the same item
 	# takes that rate when the VAT account has no Tax Rate (no second line at an implied rate, review of #20)
 	item_rates = {}
@@ -376,45 +421,7 @@ def get_invoice_lines(filters, doctype, vat_accounts):
 			line.vat_accounts |= item.vat_accounts
 		else:
 			grouped[key] = frappe._dict(item, vat_accounts=set(item.vat_accounts))
-
-	lines = []
-	for row in grouped.values():
-		vat_amount = flt(row.vat_amount, 2)
-		# a line is zero rated (or an export) only when it carries no VAT; the stored rate can be 0 for VAT
-		# charged as an "Actual" amount
-		if is_sales:
-			if vat_amount:
-				category = STANDARD_RATED_SALES
-			elif row.party_country and row.party_country != company_country:
-				category = EXPORTS
-			else:
-				category = ZERO_RATED_SALES
-		else:
-			category = STANDARD_RATED_PURCHASES if vat_amount else ZERO_RATED_PURCHASES
-
-		lines.append(
-			frappe._dict(
-				posting_date=row.posting_date,
-				voucher_type=doctype,
-				voucher_no=row.voucher_no,
-				party_type="Customer" if is_sales else "Supplier",
-				party=row.party,
-				party_name=row.party_name,
-				bill_no=row.bill_no,
-				bill_date=row.bill_date,
-				category=category,
-				rate=row.rate if vat_amount else 0.0,
-				is_adjustment=row.is_adjustment,
-				taxable_amount=flt(row.taxable_amount, 2),
-				vat_amount=vat_amount,
-				vat_account=", ".join(sorted(a for a in row.vat_accounts if a)),
-				remarks=None,
-			)
-		)
-	return lines
-
-
-STANDARD_RATES = (15.0, 5.0)
+	return grouped
 
 
 ACCOUNT_SEP = chr(31)
