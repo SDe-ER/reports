@@ -1,0 +1,53 @@
+---
+title: SDCE Reports
+description: Reports for Frappe and ERPNext — standard, tested and version controlled, starting with the Saudi VAT return.
+template: splash
+hero:
+  title: Your reports, the ERPNext way
+  tagline: One Frappe app for the reports you add to ERPNext. Each report is a standard report, built from your posted documents, tested, translated to Arabic and installed with bench.
+  image:
+    file: ../../assets/logo.svg
+  actions:
+    - text: Get started
+      link: /reports/getting-started/introduction/
+      icon: right-arrow
+    - text: Browse reports
+      link: /reports/reports/ksa-vat-return/
+      variant: minimal
+---
+
+import { Card, CardGrid, LinkCard } from "@astrojs/starlight/components";
+
+## What the app does
+
+<CardGrid>
+	<Card title="Saudi VAT return" icon="document">
+		Fields 1 to 16 of the return with amount, adjustment and VAT columns, laid out like the official form.
+	</Card>
+	<Card title="Every amount traceable" icon="magnifier">
+		Click any amount to open the vouchers behind it: invoice numbers, parties, tax IDs, taxable amount and VAT.
+	</Card>
+	<Card title="Standard ERPNext reports" icon="approve-check">
+		Script reports read submitted invoices and the general ledger. They never change your documents or entries.
+	</Card>
+	<Card title="Print, Excel and PDF" icon="download">
+		A4 print views, and Excel or PDF export from the standard report menu.
+	</Card>
+	<Card title="No company data" icon="seti:lock">
+		Accounts, rates and companies come from settings on your site. Nothing is hard-coded and tests use synthetic data.
+	</Card>
+	<Card title="Arabic and English" icon="translate">
+		Every label, report and print in Arabic (right to left) and English.
+	</Card>
+</CardGrid>
+
+## Start here
+
+<CardGrid>
+	<LinkCard title="Introduction" description="What the app is and how its reports work." href="/reports/getting-started/introduction/" />
+	<LinkCard title="Installation" description="Install the app on a Frappe / ERPNext bench." href="/reports/getting-started/installation/" />
+	<LinkCard title="Configuration" description="Settings each report needs before it runs." href="/reports/getting-started/configuration/" />
+	<LinkCard title="KSA VAT Return" description="The Saudi VAT return, field by field." href="/reports/reports/ksa-vat-return/" />
+	<LinkCard title="What's new" description="Every change, in plain language." href="/reports/releases/whats-new/" />
+	<LinkCard title="Development" description="Tests, checks and how to add a report." href="/reports/getting-started/development/" />
+</CardGrid>

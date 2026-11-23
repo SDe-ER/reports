@@ -1,5 +1,7 @@
 # SDCE Reports
 
+Documentation: https://sde-er.github.io/reports/ (English and العربية)
+
 Frappe / ERPNext app (`sdce_reports`) that holds every report SDCE develops or adds to its ERPNext system.
 One place, version controlled, tested, installed with `bench`.
 
