@@ -1,59 +1,88 @@
 {%
+	var CTX = "KSA VAT Return";
+	var esc = frappe.utils.escape_html;
 	var columns = report.get_columns_for_print().filter((col) => !col.hidden && col.fieldname !== "no");
 	var first = data[0] || {};
 	var is_blank = (v) => v === null || v === undefined || v === "";
 	var fmt = (row, col) => is_blank(row[col.fieldname]) ? "" : frappe.format(row[col.fieldname], col, { always_show_decimals: true }, row);
+	var day = (d) => d ? frappe.datetime.str_to_user(d) : "";
 %}
 <style>
-	.ksa-vat { font-size: 9pt; color: #171717; }
-	.ksa-vat .ksa-vat-head { text-align: center; margin-bottom: 14px; }
-	.ksa-vat .ksa-vat-head .company { font-size: 14pt; font-weight: 700; margin: 0; }
-	.ksa-vat .ksa-vat-head .title { font-size: 12pt; font-weight: 600; margin: 2px 0; }
-	.ksa-vat .ksa-vat-head .period { color: #525252; margin: 0; }
+	/* Standard Frappe print greys: text #171717, labels #7c7c7c, header #f3f3f3, borders #d1d8dd, title rule #aaa */
+	@page { size: A4 portrait; margin: 10mm; }
+	.ksa-vat { font-size: 9pt; line-height: 1.45; color: #171717; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+	.ksa-vat[dir="rtl"] { direction: rtl; text-align: right; }
+	.ksa-vat[dir="ltr"] { direction: ltr; text-align: left; }
 	.ksa-vat table { width: 100%; border-collapse: collapse; }
-	.ksa-vat th { color: #525252; font-weight: 700; border-bottom: 1px solid #aaa; padding: 4px 6px; }
-	.ksa-vat td { padding: 4px 6px; border-bottom: 1px solid #ededed; vertical-align: top; }
-	.ksa-vat td.num, .ksa-vat th.num { width: 16%; text-align: right; white-space: nowrap; }
-	.ksa-vat td.num { direction: ltr; unicode-bidi: embed; font-variant-numeric: tabular-nums; }
-	.ksa-vat tr.heading td { background: #f3f3f3; color: #525252; font-size: 8.5pt; font-weight: 600; }
-	.ksa-vat tr.bold td { font-weight: 700; border-top: 1px solid #aaa; }
-	.ksa-vat .no { width: 4%; text-align: center; color: #525252; }
-	.ksa-vat .generated { color: #7c7c7c; font-size: 8pt; margin-top: 12px; }
+	.ksa-vat .kv-co { font-size: 10pt; font-weight: 700; color: #525252; margin: 0 0 2px; }
+	.ksa-vat .kv-title { border-bottom: 1px solid #aaa; margin: 0 0 10px; padding-bottom: 4px; }
+	.ksa-vat .kv-title h2 { margin: 0; font-size: 16pt; font-weight: 700; color: #171717; }
+	.ksa-vat .kv-meta { width: 70%; margin: 0 0 10px; table-layout: fixed; }
+	.ksa-vat .kv-meta td { border: none; padding: 2px 0; vertical-align: top; }
+	.ksa-vat .kv-meta td.kv-ml { width: 22%; font-weight: 700; color: #7c7c7c; }
+	.ksa-vat .kv-meta td.kv-num { direction: ltr; unicode-bidi: embed; }
+	.ksa-vat[dir="rtl"] .kv-meta td.kv-num { text-align: right; }
+	.ksa-vat .kv-rows { table-layout: fixed; border: 1px solid #d1d8dd; }
+	.ksa-vat .kv-rows th, .ksa-vat .kv-rows td { padding: 3px 6px; border: 1px solid #d1d8dd; vertical-align: middle; }
+	.ksa-vat .kv-rows th { background: #f3f3f3; color: #525252; font-weight: 700; text-align: center; }
+	.ksa-vat .kv-rows thead { display: table-header-group; }
+	.ksa-vat .kv-rows tr { page-break-inside: avoid; break-inside: avoid; }
+	.ksa-vat .kv-rows th.kv-c, .ksa-vat .kv-rows td.kv-c { width: 6%; text-align: center; }
+	.ksa-vat .kv-rows td.kv-c { color: #525252; }
+	.ksa-vat .kv-rows th.kv-n, .ksa-vat .kv-rows td.kv-n { width: 16%; }
+	.ksa-vat .kv-rows td.kv-n { text-align: right; direction: ltr; unicode-bidi: embed; white-space: nowrap; font-variant-numeric: tabular-nums; }
+	.ksa-vat .kv-rows tr.kv-heading td { background: #fafafa; color: #525252; font-weight: 700; }
+	.ksa-vat .kv-rows tr.kv-total td { background: #f3f3f3; font-weight: 700; border-top: 2px solid #999; }
+	.ksa-vat .kv-signs { margin-top: 18px; table-layout: fixed; page-break-inside: avoid; break-inside: avoid; }
+	.ksa-vat .kv-signs td { border: none; text-align: center; vertical-align: top; padding: 0 12px; font-weight: 700; color: #525252; }
+	.ksa-vat .kv-signs .kv-line { display: block; border-top: 1px solid #999; margin: 26px 15% 4px; }
 </style>
 <div class="ksa-vat" dir="{%= frappe.utils.is_rtl() ? "rtl" : "ltr" %}">
-	<div class="ksa-vat-head">
-		<p class="company">{%= frappe.utils.escape_html(filters.company || "") %}</p>
-		<p class="title">{%= __("VAT Return") %}</p>
-		{% if (first.company_tax_id) { %}
-		<p class="period">{%= __("VAT Registration Number", null, "KSA VAT Return") %}: {%= frappe.utils.escape_html(first.company_tax_id) %}</p>
-		{% } %}
-		<p class="period">
-			{%= __("For the period from {0} to {1}", [frappe.datetime.str_to_user(filters.from_date), frappe.datetime.str_to_user(filters.to_date)]) %}
-		</p>
-	</div>
-	<table>
+	<div class="kv-co">{%= esc(filters.company || "") %}</div>
+	<div class="kv-title"><h2>{%= __("VAT Return") %}</h2></div>
+	<table class="kv-meta">
+		<tr>
+			<td class="kv-ml">{%= __("Company") %}</td><td>{%= esc(filters.company || "") %}</td>
+			<td class="kv-ml">{%= __("VAT Registration Number", null, CTX) %}</td><td class="kv-num">{%= esc(first.company_tax_id || "") %}</td>
+		</tr>
+		<tr>
+			<td class="kv-ml">{%= __("From Date") %}</td><td>{%= day(filters.from_date) %}</td>
+			<td class="kv-ml">{%= __("To Date") %}</td><td>{%= day(filters.to_date) %}</td>
+		</tr>
+		<tr>
+			<td class="kv-ml">{%= __("Issue Date", null, CTX) %}</td><td>{%= day(frappe.datetime.get_today()) %}</td>
+			<td></td><td></td>
+		</tr>
+	</table>
+	<table class="kv-rows">
 		<thead>
 			<tr>
-				<th class="no">{%= __("No", null, "KSA VAT Return") %}</th>
+				<th class="kv-c">{%= __("No", null, CTX) %}</th>
 				{% for (var i = 0; i < columns.length; i++) { %}
-				<th class="{%= columns[i].fieldtype === "Currency" ? "num" : "" %}">{%= columns[i].label %}</th>
+				<th class="{%= columns[i].fieldtype === "Currency" ? "kv-n" : "" %}">{%= esc(columns[i].label || "") %}</th>
 				{% } %}
 			</tr>
 		</thead>
 		<tbody>
 			{% for (var j = 0; j < data.length; j++) { var row = data[j]; %}
-			<tr class="{%= row.is_heading ? "heading" : (row.bold ? "bold" : "") %}">
-				<td class="no">{%= frappe.utils.escape_html(row.no || "") %}</td>
+			<tr class="{%= row.is_heading ? "kv-heading" : (row.bold ? "kv-total" : "") %}">
+				<td class="kv-c">{%= esc(row.no || "") %}</td>
 				{% for (var i = 0; i < columns.length; i++) { %}
 					{% if (columns[i].fieldtype === "Currency") { %}
-					<td class="num">{%= row.is_heading ? "" : fmt(row, columns[i]) %}</td>
+					<td class="kv-n">{%= row.is_heading ? "" : fmt(row, columns[i]) %}</td>
 					{% } else { %}
-					<td>{%= frappe.utils.escape_html(row[columns[i].fieldname] || "") %}</td>
+					<td>{%= esc(row[columns[i].fieldname] || "") %}</td>
 					{% } %}
 				{% } %}
 			</tr>
 			{% } %}
 		</tbody>
 	</table>
-	<p class="generated">{%= __("Generated on {0}", [frappe.datetime.str_to_user(frappe.datetime.now_datetime())]) %}</p>
+	<table class="kv-signs">
+		<tr>
+			<td><span class="kv-line"></span>{%= __("Prepared by", null, CTX) %}</td>
+			<td><span class="kv-line"></span>{%= __("Reviewed by", null, CTX) %}</td>
+			<td><span class="kv-line"></span>{%= __("Approved by", null, CTX) %}</td>
+		</tr>
+	</table>
 </div>

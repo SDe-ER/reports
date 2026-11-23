@@ -236,3 +236,19 @@ msgstr "سِجِلّ"
 
 msgid "Saudi VAT"
 msgstr "ضريبة القيمة المضافة السعودية"
+
+msgctxt "KSA VAT Return"
+msgid "Issue Date"
+msgstr "تاريخ الإصدار"
+
+msgctxt "KSA VAT Return"
+msgid "Prepared by"
+msgstr "إعداد"
+
+msgctxt "KSA VAT Return"
+msgid "Reviewed by"
+msgstr "مراجعة"
+
+msgctxt "KSA VAT Return"
+msgid "Approved by"
+msgstr "اعتماد"

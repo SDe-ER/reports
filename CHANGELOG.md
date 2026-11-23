@@ -12,6 +12,9 @@ All notable changes to Sijill are recorded here. The format follows
   every Sijill report.
 
 ### Changed
+- KSA VAT Return print follows the standard print layout: small company line, title over a grey rule, a
+  label / value block (company, VAT registration number, period, issue date), bordered grey table with section and
+  total rows, and Prepared / Reviewed / Approved signature lines. The site Letter Head adds the logo, header and footer.
 - `app_logo_url` removed from hooks so the app never replaces the site's own navbar / login logo.
 
 ## [0.1.1] - 2026-11-23
