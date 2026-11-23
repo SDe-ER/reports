@@ -105,7 +105,7 @@ def get_columns():
 		},
 		{
 			"fieldname": "vat_amount",
-			"label": _("VAT Amount"),
+			"label": _("VAT Amount", context="KSA VAT Return"),
 			"fieldtype": "Currency",
 			"options": "currency",
 			"width": 150,

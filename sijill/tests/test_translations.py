@@ -16,10 +16,12 @@ def read_catalog(path):
 class TestTranslations(unittest.TestCase):
 	def test_no_override_of_core_translations(self):
 		"""Sijill loads after Frappe and ERPNext: a string without a context that they already translate would
-		replace their Arabic label on every screen of the site. Report-specific wording must use a context."""
+		replace their Arabic label on every screen of the site. Report-specific wording must use a context.
+		Every other app installed on the site (for example ksa_compliance) is checked as well."""
 		own = read_catalog(Path(frappe.get_app_path("sijill", "locale", "ar.po")))
 		core_ids = set()
-		for app in ("frappe", "erpnext", "hrms"):
+		apps = {"frappe", "erpnext", "hrms"} | set(frappe.get_installed_apps())
+		for app in sorted(apps - {"sijill"}):
 			try:
 				path = Path(frappe.get_app_path(app, "locale", "ar.po"))
 			except Exception:
