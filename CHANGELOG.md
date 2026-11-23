@@ -7,8 +7,9 @@ All notable changes to Sijill are recorded here. The format follows
 ## [Unreleased]
 
 ### Changed
-- KSA VAT Return print: the table header is #f3f3f3 and the table text #171717 also when the site Print Style sets
-  other colours with `!important` (rules scoped to the report's own classes; the site Print Style and Letter Heads
+- KSA VAT Return print: the table header is #f3f3f3 and the table text #171717 (section-heading rows and the No column included),
+  with the grey heading/total row fills and #d1d8dd borders, also when the site Print Style sets other colours with
+  `!important` (rules scoped to the report's own classes; the site Print Style and Letter Heads
   are not changed). The label / value block no longer repeats the company, which stays on the line above the title.
   A test checks the colours, the scoping and the block.
 

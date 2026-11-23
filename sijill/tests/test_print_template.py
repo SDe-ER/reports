@@ -23,6 +23,9 @@ class TestPrintTemplate(unittest.TestCase):
 			r"\.ksa-vat \.kv-rows thead th\.kv-h \{[^}]*background: #f3f3f3 !important;[^}]*color: #171717 !important;",
 		)
 		self.assertRegex(html, r"\.ksa-vat \.kv-rows tbody td\.kv-d \{[^}]*color: #171717 !important;")
+		self.assertRegex(html, r"tr\.kv-total td\.kv-d \{[^}]*background: #f3f3f3 !important;")
+		self.assertRegex(html, r"tr\.kv-heading td\.kv-d \{[^}]*background: #fafafa !important;")
+		self.assertRegex(html, r"td\.kv-d \{ border: 1px solid #d1d8dd !important; \}")
 		# every header and body cell of the return table carries the class the rules target
 		self.assertNotRegex(html, r"<th\b(?![^>]*\bkv-h\b)[^>]*>", "a table header cell without kv-h")
 		rows = html.split('<table class="kv-rows">', 1)[1].split("</table>", 1)[0]
@@ -38,7 +41,7 @@ class TestPrintTemplate(unittest.TestCase):
 				selector = selector.strip()
 				if selector.startswith("@page"):
 					continue
-				self.assertTrue(selector.startswith(".ksa-vat"), selector)
+				self.assertRegex(selector, r"^\.ksa-vat(?=[\s.\[:#>]|$)", selector)
 
 	def test_company_line_without_company_row(self):
 		"""The company is printed once above the title; the label / value block does not repeat it."""
