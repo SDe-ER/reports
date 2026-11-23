@@ -2,9 +2,9 @@
 # License: GPL-3.0-or-later
 msgid ""
 msgstr ""
-"Content-Type: text/plain; charset=UTF-8\n"
 "Language: ar\n"
 "MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
 msgid "KSA VAT Return"
@@ -34,8 +34,16 @@ msgstr "ضريبة المدخلات"
 msgid "VAT Settlement"
 msgstr "تسوية الضريبة"
 
-msgid "Output VAT: VAT charged on sales. Input VAT: VAT paid on purchases. VAT Settlement: the account that receives the VAT balance when a return is closed or paid, and any clearing account between VAT accounts. Entries that only move amounts between these accounts are not reported."
-msgstr "ضريبة المخرجات: الضريبة المحصلة على المبيعات. ضريبة المدخلات: الضريبة المدفوعة على المشتريات. تسوية الضريبة: الحساب الذي يُرحَّل إليه رصيد الضريبة عند إقفال الإقرار أو سداده، وأي حساب وسيط بين حسابات الضريبة. القيود التي تنقل المبالغ بين هذه الحسابات فقط لا تظهر في الإقرار."
+msgid ""
+"Output VAT: VAT charged on sales. Input VAT: VAT paid on purchases. VAT "
+"Settlement: the account that receives the VAT balance when a return is "
+"closed or paid, and any clearing account between VAT accounts. Entries that "
+"only move amounts between these accounts are not reported."
+msgstr ""
+"ضريبة المخرجات: الضريبة المحصلة على المبيعات. ضريبة المدخلات: الضريبة "
+"المدفوعة على المشتريات. تسوية الضريبة: الحساب الذي يُرحَّل إليه رصيد الضريبة"
+" عند إقفال الإقرار أو سداده، وأي حساب وسيط بين حسابات الضريبة. القيود التي "
+"تنقل المبالغ بين هذه الحسابات فقط لا تظهر في الإقرار."
 
 msgid "Add at least one account of type {0}"
 msgstr "أضف حساباً واحداً على الأقل من نوع {0}"
@@ -43,26 +51,18 @@ msgstr "أضف حساباً واحداً على الأقل من نوع {0}"
 msgid "Adjustment"
 msgstr "التعديلات"
 
-msgid "Amount"
-msgstr "المبلغ"
-
-msgid "Company"
-msgstr "الشركة"
-
-msgid "Company is required"
-msgstr "الشركة مطلوبة"
-
 msgid "Company {0} is not in Saudi Arabia."
 msgstr "الشركة {0} ليست في المملكة العربية السعودية."
 
-msgid "The company {0} is not in Saudi Arabia. The KSA VAT Return is only available for companies in Saudi Arabia."
-msgstr "الشركة {0} ليست في المملكة العربية السعودية. إقرار ضريبة القيمة المضافة متاح لشركات المملكة العربية السعودية فقط."
+msgid ""
+"The company {0} is not in Saudi Arabia. The KSA VAT Return is only available"
+" for companies in Saudi Arabia."
+msgstr ""
+"الشركة {0} ليست في المملكة العربية السعودية. إقرار ضريبة القيمة المضافة متاح"
+" لشركات المملكة العربية السعودية فقط."
 
 msgid "Corrections from previous period (between SAR ±5,000)"
 msgstr "التصحيحات من الفترات السابقة (بين ±5,000 ريال)"
-
-msgid "Description"
-msgstr "البيان"
 
 msgid "Exempt purchases"
 msgstr "المشتريات المعفاة"
@@ -76,56 +76,32 @@ msgstr "الصادرات"
 msgid "For the period from {0} to {1}"
 msgstr "للفترة من {0} إلى {1}"
 
-msgid "From Date"
-msgstr "من تاريخ"
-
-msgid "To Date"
-msgstr "إلى تاريخ"
-
 msgid "Generated on {0}"
 msgstr "تاريخ الإصدار {0}"
 
-msgid "Imports subject to VAT accounted for through the reverse charge mechanism"
-msgstr "الاستيرادات الخاضعة لضريبة القيمة المضافة التي تطبق عليها آلية الاحتساب العكسي"
+msgid ""
+"Imports subject to VAT accounted for through the reverse charge mechanism"
+msgstr ""
+"الاستيرادات الخاضعة لضريبة القيمة المضافة التي تطبق عليها آلية الاحتساب "
+"العكسي"
 
 msgid "Imports subject to VAT paid at customs"
-msgstr "الاستيرادات الخاضعة لضريبة القيمة المضافة بالنسبة الأساسية والتي تدفع في الجمارك"
-
-msgid "Invoice Date"
-msgstr "تاريخ الفاتورة"
-
-msgid "Invoice No"
-msgstr "رقم فاتورة العميل / المورد"
+msgstr ""
+"الاستيرادات الخاضعة لضريبة القيمة المضافة بالنسبة الأساسية والتي تدفع في "
+"الجمارك"
 
 msgid "KSA VAT Settings Missing"
 msgstr "إعدادات ضريبة القيمة المضافة غير موجودة"
 
-msgid "Missing Company"
-msgstr "الشركة غير محددة"
-
 msgid "Net VAT due (or claim)"
 msgstr "صافي ضريبة القيمة المضافة المستحقة (أو المطالب باستردادها)"
 
-msgid "No"
-msgstr "م"
-
-msgid "Only moves amounts between VAT accounts (settlement or reclassification)"
+msgid ""
+"Only moves amounts between VAT accounts (settlement or reclassification)"
 msgstr "ينقل مبالغ بين حسابات الضريبة فقط (تسوية أو إعادة تبويب)"
 
 msgid "Opening entry"
 msgstr "قيد افتتاحي"
-
-msgid "Party"
-msgstr "الطرف"
-
-msgid "Party Name"
-msgstr "اسم العميل / المورد"
-
-msgid "Party Type"
-msgstr "نوع الطرف"
-
-msgid "Posting Date"
-msgstr "تاريخ القيد"
 
 msgid "Private healthcare and private education sales to citizens"
 msgstr "المبيعات للمواطنين (الخدمات الصحية الخاصة / التعليم الأهلي الخاص)"
@@ -133,26 +109,8 @@ msgstr "المبيعات للمواطنين (الخدمات الصحية الخ�
 msgid "Rate (%)"
 msgstr "النسبة (%)"
 
-msgid "Remarks"
-msgstr "ملاحظات"
-
-msgid "Row #{0}: Account {1} does not belong to company {2}"
-msgstr "الصف #{0}: الحساب {1} لا يتبع الشركة {2}"
-
-msgid "Row #{0}: Account {1} is a group account"
-msgstr "الصف #{0}: الحساب {1} حساب رئيسي"
-
-msgid "Row #{0}: Account {1} is added more than once"
-msgstr "الصف #{0}: الحساب {1} مضاف أكثر من مرة"
-
 msgid "Sales / Purchase"
 msgstr "مبيعات / مشتريات"
-
-msgid "Sales"
-msgstr "المبيعات"
-
-msgid "Purchase"
-msgstr "المشتريات"
 
 msgid "Set the VAT accounts of company {0} in {1} first."
 msgstr "حدد حسابات ضريبة القيمة المضافة للشركة {0} في {1} أولاً."
@@ -171,12 +129,6 @@ msgstr "المبيعات الخاضعة للنسبة الأساسية"
 
 msgid "Standard rated sales at {0}%"
 msgstr "المبيعات {0}% ضريبة"
-
-msgid "Tax ID"
-msgstr "الرقم الضريبي"
-
-msgid "Taxable Amount"
-msgstr "المبلغ قبل الضريبة"
 
 msgid "Total Including VAT"
 msgstr "الإجمالي شامل الضريبة"
@@ -217,12 +169,6 @@ msgstr "المشتريات [المصروفات]"
 msgid "VAT on Sales"
 msgstr "المبيعات [الإيرادات]"
 
-msgid "Voucher No"
-msgstr "رقم التسجيل على النظام"
-
-msgid "Voucher Type"
-msgstr "نوع المستند"
-
 msgid "Zero rated domestic sales"
 msgstr "المبيعات المحلية الخاضعة للنسبة الصفرية"
 
@@ -244,8 +190,41 @@ msgstr "مشتريات بالنسبة الصفرية"
 msgid "Excluded"
 msgstr "مستبعد"
 
-msgid "Account"
-msgstr "الحساب"
-
 msgid "VAT payment or refund (only VAT and bank or cash accounts)"
 msgstr "سداد أو استرداد ضريبة (حسابات ضريبة وبنك أو صندوق فقط)"
+
+msgctxt "KSA VAT Return"
+msgid "No"
+msgstr "م"
+
+msgctxt "KSA VAT Return"
+msgid "Description"
+msgstr "البيان"
+
+msgctxt "KSA VAT Return"
+msgid "Amount"
+msgstr "المبلغ"
+
+msgctxt "KSA VAT Return"
+msgid "Posting Date"
+msgstr "تاريخ القيد"
+
+msgctxt "KSA VAT Return"
+msgid "Voucher Type"
+msgstr "نوع المستند"
+
+msgctxt "KSA VAT Return"
+msgid "Voucher No"
+msgstr "رقم التسجيل على النظام"
+
+msgctxt "KSA VAT Return"
+msgid "Invoice No"
+msgstr "رقم فاتورة العميل / المورد"
+
+msgctxt "KSA VAT Return"
+msgid "Party Name"
+msgstr "اسم العميل / المورد"
+
+msgctxt "KSA VAT Return"
+msgid "Taxable Amount"
+msgstr "المبلغ قبل الضريبة"

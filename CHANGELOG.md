@@ -6,6 +6,11 @@ All notable changes to Sijill are recorded here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+- The Arabic catalogue no longer re-translates strings that Frappe, ERPNext or HRMS already translate (for
+  example "No", "Amount", "Voucher No"). Report-specific wording uses the translation context
+  "KSA VAT Return", so the rest of the site keeps its own Arabic labels. A test blocks such overrides.
+
 ## [0.1.0] - 2026-11-23
 
 ### Added

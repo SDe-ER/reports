@@ -65,7 +65,7 @@ frappe.query_reports["KSA VAT Return Detail"] = {
 		},
 		{
 			fieldname: "voucher_type",
-			label: __("Voucher Type"),
+			label: __("Voucher Type", null, "KSA VAT Return"),
 			fieldtype: "Select",
 			options: ["", "Sales Invoice", "Purchase Invoice", "Journal Entry", "Payment Entry"],
 		},
