@@ -6,6 +6,8 @@ All notable changes to Sijill are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-11-24
+
 ### Fixed
 - Invoices whose VAT row is an "Actual" amount (Item Wise Tax Detail stores rate 0) are reported as standard rated at
   the VAT account's Tax Rate (or the rate implied by the amounts, snapped to 15% / 5% within 0.5 points) instead of
@@ -70,7 +72,8 @@ All notable changes to Sijill are recorded here. The format follows
   documents, ledger entries or permissions.
 - Rollback: `bench --site <site> uninstall-app sijill` removes the reports and settings only.
 
-[Unreleased]: https://github.com/SDe-ER/reports/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/SDe-ER/reports/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/SDe-ER/reports/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/SDe-ER/reports/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/SDe-ER/reports/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/SDe-ER/reports/releases/tag/v0.1.0
