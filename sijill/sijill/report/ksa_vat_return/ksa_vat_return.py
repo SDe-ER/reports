@@ -266,19 +266,20 @@ def get_vat_lines(filters, include_excluded=False):
 	return lines
 
 
-# The taxable amount of an item is counted once per rate, even if the item carries more than one
-# tax row at that rate on the VAT accounts.
+# One row per invoice, item row and stored rate (taxable amount counted once per item and rate). The effective
+# rate and the per-invoice totals are built in get_invoice_lines, so an item is counted once per effective rate even
+# when tax rows at different stored rates (for example 15% and an "Actual" amount stored at 0) map to the same rate.
+# Account names are joined with chr(31) (ACCOUNT_SEP), which no account name contains.
 SALES_INVOICE_QUERY = """
 		select
 			inv.name as voucher_no, inv.posting_date, inv.customer as party,
 			inv.customer_name as party_name, inv.name as bill_no, inv.posting_date as bill_date, addr.country as party_country,
 			(inv.is_return = 1 or inv.is_debit_note = 1) as is_adjustment, item.rate,
-			sum(item.taxable_amount) as taxable_amount, sum(item.vat_amount) as vat_amount,
-			group_concat(distinct item.accounts separator ', ') as vat_account
+			item.item_row, item.taxable_amount, item.vat_amount, item.accounts as vat_account
 		from (
 			select d.parent, d.item_row, d.rate,
 				max(d.taxable_amount) as taxable_amount, sum(d.amount) as vat_amount,
-				group_concat(distinct tax.account_head separator ', ') as accounts
+				group_concat(distinct tax.account_head separator '\x1f') as accounts
 			from `tabItem Wise Tax Detail` d
 			inner join `tabSales Taxes and Charges` tax on tax.name = d.tax_row
 			where d.parenttype = %(doctype)s
@@ -290,7 +291,6 @@ SALES_INVOICE_QUERY = """
 		where inv.docstatus = 1
 			and inv.company = %(company)s
 			and inv.posting_date between %(from_date)s and %(to_date)s
-		group by inv.name, item.rate, is_adjustment
 """
 
 PURCHASE_INVOICE_QUERY = """
@@ -298,12 +298,11 @@ PURCHASE_INVOICE_QUERY = """
 			inv.name as voucher_no, inv.posting_date, inv.supplier as party,
 			inv.supplier_name as party_name, inv.bill_no as bill_no, inv.bill_date as bill_date, null as party_country,
 			inv.is_return = 1 as is_adjustment, item.rate,
-			sum(item.taxable_amount) as taxable_amount, sum(item.vat_amount) as vat_amount,
-			group_concat(distinct item.accounts separator ', ') as vat_account
+			item.item_row, item.taxable_amount, item.vat_amount, item.accounts as vat_account
 		from (
 			select d.parent, d.item_row, d.rate,
 				max(d.taxable_amount) as taxable_amount, sum(d.amount) as vat_amount,
-				group_concat(distinct tax.account_head separator ', ') as accounts
+				group_concat(distinct tax.account_head separator '\x1f') as accounts
 			from `tabItem Wise Tax Detail` d
 			inner join `tabPurchase Taxes and Charges` tax on tax.name = d.tax_row
 			where d.parenttype = %(doctype)s
@@ -316,7 +315,6 @@ PURCHASE_INVOICE_QUERY = """
 		where inv.docstatus = 1
 			and inv.company = %(company)s
 			and inv.posting_date between %(from_date)s and %(to_date)s
-		group by inv.name, item.rate, is_adjustment
 """
 
 
@@ -335,18 +333,22 @@ def get_invoice_lines(filters, doctype, vat_accounts):
 	)
 
 	company_country = frappe.get_cached_value("Company", filters.company, "country")
+	grouped = group_by_effective_rate(rows)
+
 	lines = []
-	for row in rows:
-		rate = flt(row.rate)
+	for row in grouped.values():
+		vat_amount = flt(row.vat_amount, 2)
+		# a line is zero rated (or an export) only when it carries no VAT; the stored rate can be 0 for VAT
+		# charged as an "Actual" amount
 		if is_sales:
-			if rate:
+			if vat_amount:
 				category = STANDARD_RATED_SALES
 			elif row.party_country and row.party_country != company_country:
 				category = EXPORTS
 			else:
 				category = ZERO_RATED_SALES
 		else:
-			category = STANDARD_RATED_PURCHASES if rate else ZERO_RATED_PURCHASES
+			category = STANDARD_RATED_PURCHASES if vat_amount else ZERO_RATED_PURCHASES
 
 		lines.append(
 			frappe._dict(
@@ -359,15 +361,93 @@ def get_invoice_lines(filters, doctype, vat_accounts):
 				bill_no=row.bill_no,
 				bill_date=row.bill_date,
 				category=category,
-				rate=rate,
+				rate=row.rate if vat_amount else 0.0,
 				is_adjustment=row.is_adjustment,
 				taxable_amount=flt(row.taxable_amount, 2),
-				vat_amount=flt(row.vat_amount, 2),
-				vat_account=row.vat_account,
+				vat_amount=vat_amount,
+				vat_account=", ".join(sorted(a for a in row.vat_accounts if a)),
 				remarks=None,
 			)
 		)
 	return lines
+
+
+STANDARD_RATES = (15.0, 5.0)
+
+
+def group_by_effective_rate(rows):
+	"""Invoice rows (one per invoice, item row and stored rate) -> one row per invoice, effective rate and
+	adjustment flag. An item's taxable amount is counted once per effective rate."""
+	# the non-zero stored rates of each item: an "Actual" row (stored rate 0) next to a rate row of the same item
+	# takes that rate when the VAT account has no Tax Rate (no second line at an implied rate, review of #20)
+	item_rates = {}
+	for row in rows:
+		if flt(row.rate):
+			item_rates.setdefault((row.voucher_no, row.item_row), set()).add(flt(row.rate))
+	# item level: one taxable amount per item and effective rate, VAT summed over its tax rows
+	items = {}
+	for row in rows:
+		accounts = set(filter(None, (row.vat_account or "").split(ACCOUNT_SEP)))
+		own = item_rates.get((row.voucher_no, row.item_row)) or set()
+		rate = effective_rate(
+			row.rate,
+			row.taxable_amount,
+			row.vat_amount,
+			accounts,
+			item_rate=next(iter(own)) if len(own) == 1 else None,
+		)
+		key = (row.voucher_no, row.item_row, rate, row.is_adjustment)
+		if key in items:
+			item = items[key]
+			item.taxable_amount = max(item.taxable_amount, flt(row.taxable_amount), key=abs)
+			item.vat_amount += flt(row.vat_amount)
+			item.vat_accounts |= accounts
+		else:
+			items[key] = frappe._dict(
+				row,
+				rate=rate,
+				taxable_amount=flt(row.taxable_amount),
+				vat_amount=flt(row.vat_amount),
+				vat_accounts=accounts,
+			)
+	# invoice level: per effective rate and adjustment flag
+	grouped = {}
+	for (voucher_no, _item_row, rate, is_adjustment), item in items.items():
+		key = (voucher_no, rate, is_adjustment)
+		if key in grouped:
+			line = grouped[key]
+			line.taxable_amount += item.taxable_amount
+			line.vat_amount += item.vat_amount
+			line.vat_accounts |= item.vat_accounts
+		else:
+			grouped[key] = frappe._dict(item, vat_accounts=set(item.vat_accounts))
+	return grouped
+
+
+ACCOUNT_SEP = chr(31)
+
+
+def effective_rate(stored_rate, taxable_amount, vat_amount, vat_accounts, item_rate=None):
+	"""The VAT rate of an invoice line. Item Wise Tax Detail stores rate 0 for a tax row of charge type
+	"Actual" although the row carries VAT: then the Tax Rate of the VAT account is used, else the item's own
+	stored rate (when its other VAT row has exactly one), else the rate implied by the amounts (snapped to a
+	standard rate within 0.5 points)."""
+	rate = flt(stored_rate)
+	if rate or not flt(vat_amount):
+		return rate
+	for account in sorted(vat_accounts or ()):
+		account_rate = flt(frappe.get_cached_value("Account", account, "tax_rate"))
+		if account_rate:
+			return account_rate
+	if item_rate:
+		return flt(item_rate)
+	if flt(taxable_amount):
+		implied = abs(flt(vat_amount) / flt(taxable_amount) * 100)
+		for standard in STANDARD_RATES:
+			if abs(implied - standard) <= 0.5:
+				return standard
+		return flt(implied, 2)
+	return 0.0
 
 
 def get_gl_lines(filters, accounts, include_excluded=False):
@@ -410,6 +490,7 @@ def get_gl_lines(filters, accounts, include_excluded=False):
 	)
 
 	lines = []
+	bank_names = {}
 	for row in rows:
 		is_output = accounts[row.account] == "Output VAT"
 		vat_amount = flt(row.credit - row.debit if is_output else row.debit - row.credit, 2)
@@ -440,6 +521,12 @@ def get_gl_lines(filters, accounts, include_excluded=False):
 			category = STANDARD_RATED_SALES if is_output else STANDARD_RATED_PURCHASES
 
 		party_type, party = get_voucher_party(row.voucher_type, row.voucher_no, is_output)
+		party_name = get_party_name(party_type, party)
+		if not party and row.voucher_type == "Journal Entry":
+			# no customer or supplier: name the bank (or cash) the entry was paid through; no tax ID
+			if row.voucher_no not in bank_names:
+				bank_names[row.voucher_no] = get_bank_name(row.voucher_no)
+			party_name = bank_names[row.voucher_no]
 		bill_no, bill_date = get_voucher_reference(row.voucher_type, row.voucher_no)
 		lines.append(
 			frappe._dict(
@@ -448,7 +535,7 @@ def get_gl_lines(filters, accounts, include_excluded=False):
 				voucher_no=row.voucher_no,
 				party_type=party_type,
 				party=party,
-				party_name=get_party_name(party_type, party),
+				party_name=party_name,
 				bill_no=bill_no,
 				bill_date=bill_date,
 				category=category,
@@ -499,3 +586,26 @@ def get_party_name(party_type, party):
 		return None
 	field = "customer_name" if party_type == "Customer" else "supplier_name"
 	return frappe.get_cached_value(party_type, party, field)
+
+
+def get_bank_name(journal_entry):
+	"""Name of the Bank Account set on a row of the Journal Entry, else the account name of its bank or cash
+	ledger account. None when the entry has neither."""
+	fields = ["account"]
+	if frappe.get_meta("Journal Entry Account").has_field("bank_account"):
+		fields.append("bank_account")
+	rows = frappe.get_all(
+		"Journal Entry Account",
+		filters={"parent": journal_entry, "parenttype": "Journal Entry"},
+		fields=fields,
+		order_by="idx",
+	)
+	for row in rows:
+		if row.get("bank_account"):
+			return (
+				frappe.get_cached_value("Bank Account", row.bank_account, "account_name") or row.bank_account
+			)
+	for row in rows:
+		if frappe.get_cached_value("Account", row.account, "account_type") in ("Bank", "Cash"):
+			return frappe.get_cached_value("Account", row.account, "account_name") or row.account
+	return None

@@ -13,6 +13,7 @@ from sijill.sijill.report.ksa_vat_return.ksa_vat_return import (
 	STANDARD_RATED_SALES,
 	ZERO_RATED_SALES,
 	execute,
+	group_by_effective_rate,
 )
 from sijill.sijill.report.ksa_vat_return_detail.ksa_vat_return_detail import (
 	execute as execute_detail,
@@ -195,6 +196,86 @@ class TestKSAVATReturn(ERPNextTestSuite):
 
 		boxes, _data = self.summary()
 		self.assertEqual((boxes["7"]["amount"], boxes["7"]["vat_amount"]), (200, 30))
+
+	def test_actual_vat_row_is_standard_rated(self):
+		"""A VAT row of charge type "Actual" stores rate 0 in Item Wise Tax Detail; the line still carries VAT
+		and belongs in field 7 at the 15% rate, not in the zero rated field 10."""
+		make_purchase_invoice(rate=869.57, bill_no="SUP-ACT-1", actual_vat=130.44)
+
+		boxes, _data = self.summary()
+		self.assertEqual((boxes["7"]["amount"], boxes["7"]["vat_amount"]), (869.57, 130.44))
+		self.assertEqual(boxes["10"]["amount"], 0)
+		self.assertEqual(boxes["12"]["vat_amount"], 130.44)
+		self.assertEqual(boxes["13"]["vat_amount"], -130.44)
+
+		_columns, lines = execute_detail(self.filters(voucher_type="Purchase Invoice"))
+		self.assertEqual(
+			[(line["category"], line["rate"]) for line in lines], [(STANDARD_RATED_PURCHASES, 15)]
+		)
+
+	def test_actual_row_next_to_a_rate_row_is_counted_once(self):
+		"""One item with a 15% row and an "Actual" row on the VAT account: both map to 15%, the item's taxable amount
+		is counted once (review of #20). Built from Item Wise Tax Detail rows directly."""
+		lines = group_by_effective_rate(
+			[
+				invoice_row(item_row="r1", rate=15, taxable=1000, vat=150),
+				invoice_row(item_row="r1", rate=0, taxable=1000, vat=5),
+				invoice_row(item_row="r2", rate=15, taxable=200, vat=30),
+			]
+		)
+		self.assertEqual(
+			[(line.rate, line.taxable_amount, line.vat_amount) for line in lines.values()], [(15, 1200, 185)]
+		)
+
+	def test_actual_row_without_account_tax_rate(self):
+		"""VAT account without a Tax Rate: an "Actual" row next to a 15% row of the same item takes the item's 15%
+		(no second line at the 0.5% the Actual amount alone implies); an Actual-only item takes the implied rate
+		snapped to 15%; an odd implied rate stays as it is, rounded."""
+		frappe.db.set_value("Account", INPUT_VAT, "tax_rate", 0)
+		frappe.clear_cache()
+		lines = group_by_effective_rate(
+			[
+				invoice_row(item_row="r1", rate=15, taxable=1000, vat=150),
+				invoice_row(item_row="r1", rate=0, taxable=1000, vat=5),
+				invoice_row(voucher_no="PI-2", item_row="r1", rate=0, taxable=869.57, vat=130.44),
+				invoice_row(voucher_no="PI-3", item_row="r1", rate=0, taxable=1000, vat=73.3),
+			]
+		)
+		self.assertEqual(
+			sorted((v, line.rate, line.taxable_amount, line.vat_amount) for (v, *_k), line in lines.items()),
+			[("PI-1", 15, 1000, 155), ("PI-2", 15, 869.57, 130.44), ("PI-3", 7.33, 1000, 73.3)],
+		)
+
+	def test_zero_rated_line_stays_zero_rated(self):
+		make_purchase_invoice(rate=400, bill_no="SUP-ZERO-1", vat_rate=0)
+
+		boxes, _data = self.summary()
+		self.assertEqual(boxes["10"]["amount"], 400)
+		self.assertEqual((boxes["7"]["amount"], boxes["7"]["vat_amount"]), (0, 0))
+
+	def test_bank_name_on_entries_without_a_party(self):
+		bank = make_bank_vat_journal_entry(30)
+
+		_columns, lines = execute_detail(self.filters(voucher_type="Journal Entry"))
+		self.assertEqual(len(lines), 1)
+		self.assertEqual(lines[0]["party_name"], frappe.db.get_value("Account", bank, "account_name"))
+		self.assertFalse(lines[0]["party"])
+		self.assertFalse(lines[0].get("tax_id"))
+
+	def test_reclassification_entries_net_out(self):
+		"""Owner 2026-11-23: VAT removed by a reclassification JE (Dr Output VAT / Cr Sales; Dr Bank Charges /
+		Cr Input VAT) instead of cancelling the original entry. The return nets both to zero VAT."""
+		make_vat_journal_entry(net=100)
+		reclass(OUTPUT_VAT, f"Sales - {ABBR}", 15, debit_vat=True)
+		make_bank_vat_journal_entry(30)
+		reclass(INPUT_VAT, f"Cost of Goods Sold - {ABBR}", 30)
+
+		boxes, _data = self.summary()
+		self.assertEqual(boxes["1"]["vat_amount"], 0)
+		self.assertEqual(boxes["1"]["amount"] + boxes["1"]["adjustment"], 0)
+		self.assertEqual(boxes["7"]["vat_amount"], 0)
+		self.assertEqual(boxes["7"]["amount"] + boxes["7"]["adjustment"], 0)
+		self.assertEqual(boxes["13"]["vat_amount"], 0)
 
 	def test_vat_account_without_tax_rate(self):
 		frappe.db.set_value("Account", OUTPUT_VAT, "tax_rate", 0)
@@ -394,7 +475,19 @@ def make_sales_invoice(rate, vat_rate=15, customer=CUSTOMER):
 	return si
 
 
-def make_purchase_invoice(rate, bill_no):
+def make_purchase_invoice(rate, bill_no, vat_rate=15, actual_vat=None):
+	"""actual_vat: VAT as an "Actual" amount (Item Wise Tax Detail then stores rate 0)."""
+	tax = {
+		"charge_type": "On Net Total",
+		"category": "Total",
+		"add_deduct_tax": "Add",
+		"account_head": INPUT_VAT,
+		"description": "VAT",
+		"rate": vat_rate,
+		"cost_center": f"Main - {ABBR}",
+	}
+	if actual_vat is not None:
+		tax.update({"charge_type": "Actual", "rate": 0, "tax_amount": actual_vat})
 	pi = frappe.get_doc(
 		{
 			"doctype": "Purchase Invoice",
@@ -415,17 +508,7 @@ def make_purchase_invoice(rate, bill_no):
 					"cost_center": f"Main - {ABBR}",
 				}
 			],
-			"taxes": [
-				{
-					"charge_type": "On Net Total",
-					"category": "Total",
-					"add_deduct_tax": "Add",
-					"account_head": INPUT_VAT,
-					"description": "VAT",
-					"rate": 15,
-					"cost_center": f"Main - {ABBR}",
-				}
-			],
+			"taxes": [tax],
 		}
 	)
 	pi.insert()
@@ -486,3 +569,70 @@ def make_settlement_journal_entry():
 	je.insert()
 	je.submit()
 	return je
+
+
+def make_bank_vat_journal_entry(vat):
+	"""VAT a bank charges on its fees: Dr Input VAT, Cr Bank, no party. Returns the bank account."""
+	bank = frappe.db.get_value(
+		"Account", {"company": COMPANY, "account_type": ("in", ["Bank", "Cash"]), "is_group": 0}, "name"
+	)
+	je = frappe.get_doc(
+		{
+			"doctype": "Journal Entry",
+			"company": COMPANY,
+			"posting_date": nowdate(),
+			"accounts": [
+				{"account": INPUT_VAT, "debit_in_account_currency": vat, "cost_center": f"Main - {ABBR}"},
+				{"account": bank, "credit_in_account_currency": vat, "cost_center": f"Main - {ABBR}"},
+			],
+		}
+	)
+	je.insert()
+	je.submit()
+	return bank
+
+
+def reclass(vat_account, other_account, amount, debit_vat=False):
+	"""Reclassification JE: moves `amount` between a VAT account and a revenue or expense account."""
+	vat_side, other_side = ("debit", "credit") if debit_vat else ("credit", "debit")
+	je = frappe.get_doc(
+		{
+			"doctype": "Journal Entry",
+			"company": COMPANY,
+			"posting_date": nowdate(),
+			"accounts": [
+				{
+					"account": vat_account,
+					f"{vat_side}_in_account_currency": amount,
+					"cost_center": f"Main - {ABBR}",
+				},
+				{
+					"account": other_account,
+					f"{other_side}_in_account_currency": amount,
+					"cost_center": f"Main - {ABBR}",
+				},
+			],
+		}
+	)
+	je.insert()
+	je.submit()
+	return je
+
+
+def invoice_row(item_row, rate, taxable, vat, voucher_no="PI-1"):
+	"""One row as the invoice queries return it (one per invoice, item row and stored rate)."""
+	return frappe._dict(
+		voucher_no=voucher_no,
+		item_row=item_row,
+		rate=rate,
+		taxable_amount=taxable,
+		vat_amount=vat,
+		vat_account=INPUT_VAT,
+		is_adjustment=0,
+		posting_date=nowdate(),
+		party=SUPPLIER,
+		party_name=SUPPLIER,
+		bill_no=None,
+		bill_date=None,
+		party_country=None,
+	)
