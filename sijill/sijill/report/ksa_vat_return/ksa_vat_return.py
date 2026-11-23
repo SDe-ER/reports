@@ -17,8 +17,9 @@ Sources
 Not reported
 - Vouchers whose GL entries only move amounts between the configured VAT accounts (closing a
   return into the VAT Settlement account, paying it, reclassifications).
-- Vouchers that only touch VAT accounts and bank or cash accounts: paying a return to, or
-  receiving a refund from, the tax authority.
+- Vouchers that reduce a VAT account against bank or cash accounts only: paying a return to, or
+  receiving a refund from, the tax authority. VAT that a bank charges on its fees (input VAT
+  debited against the bank account) is a purchase and is reported.
 - Opening entries.
 Both are listed by the detail report when "Show Excluded Entries" is set.
 """
@@ -420,7 +421,10 @@ def get_gl_lines(filters, accounts, include_excluded=False):
 			remarks = _("Opening entry")
 		elif not row.has_other_accounts:
 			remarks = _("Only moves amounts between VAT accounts (settlement or reclassification)")
-		elif not row.has_transaction_accounts:
+		elif not row.has_transaction_accounts and vat_amount < 0:
+			# against bank or cash only: paying output VAT to the authority, or receiving an input VAT
+			# refund, reduces the VAT account and is a settlement. An increase (VAT charged by the bank
+			# on its fees, debited to input VAT) is a purchase and stays in the return.
 			remarks = _("VAT payment or refund (only VAT and bank or cash accounts)")
 
 		if remarks and not include_excluded:

@@ -174,6 +174,28 @@ class TestKSAVATReturn(ERPNextTestSuite):
 		_columns, lines = execute_detail(self.filters(show_excluded=1, voucher_type="Journal Entry"))
 		self.assertEqual([(line["category"], line["vat_amount"]) for line in lines], [(EXCLUDED, -150)])
 
+	def test_vat_charged_by_the_bank_is_reported(self):
+		"""Input VAT a bank charges on its fees (Dr Input VAT, Cr Bank) is a purchase, not a settlement."""
+		bank = frappe.db.get_value(
+			"Account", {"company": COMPANY, "account_type": ("in", ["Bank", "Cash"]), "is_group": 0}, "name"
+		)
+		je = frappe.get_doc(
+			{
+				"doctype": "Journal Entry",
+				"company": COMPANY,
+				"posting_date": nowdate(),
+				"accounts": [
+					{"account": INPUT_VAT, "debit_in_account_currency": 30, "cost_center": f"Main - {ABBR}"},
+					{"account": bank, "credit_in_account_currency": 30, "cost_center": f"Main - {ABBR}"},
+				],
+			}
+		)
+		je.insert()
+		je.submit()
+
+		boxes, _data = self.summary()
+		self.assertEqual((boxes["7"]["amount"], boxes["7"]["vat_amount"]), (200, 30))
+
 	def test_vat_account_without_tax_rate(self):
 		frappe.db.set_value("Account", OUTPUT_VAT, "tax_rate", 0)
 		frappe.clear_cache()
