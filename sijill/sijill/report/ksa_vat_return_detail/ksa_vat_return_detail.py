@@ -67,22 +67,32 @@ def add_tax_ids(lines):
 
 def get_columns():
 	return [
-		{"fieldname": "posting_date", "label": _("Posting Date"), "fieldtype": "Date", "width": 100},
+		{
+			"fieldname": "posting_date",
+			"label": _("Posting Date", context="KSA VAT Return"),
+			"fieldtype": "Date",
+			"width": 100,
+		},
 		{
 			"fieldname": "voucher_type",
-			"label": _("Voucher Type"),
+			"label": _("Voucher Type", context="KSA VAT Return"),
 			"fieldtype": "Link",
 			"options": "DocType",
 			"width": 120,
 		},
 		{
 			"fieldname": "voucher_no",
-			"label": _("Voucher No"),
+			"label": _("Voucher No", context="KSA VAT Return"),
 			"fieldtype": "Dynamic Link",
 			"options": "voucher_type",
 			"width": 170,
 		},
-		{"fieldname": "bill_no", "label": _("Invoice No"), "fieldtype": "Data", "width": 140},
+		{
+			"fieldname": "bill_no",
+			"label": _("Invoice No", context="KSA VAT Return"),
+			"fieldtype": "Data",
+			"width": 140,
+		},
 		{"fieldname": "bill_date", "label": _("Invoice Date"), "fieldtype": "Date", "width": 100},
 		{"fieldname": "party_type", "label": _("Party Type"), "fieldtype": "Data", "width": 90, "hidden": 1},
 		{
@@ -92,14 +102,19 @@ def get_columns():
 			"options": "party_type",
 			"width": 150,
 		},
-		{"fieldname": "party_name", "label": _("Party Name"), "fieldtype": "Data", "width": 200},
+		{
+			"fieldname": "party_name",
+			"label": _("Party Name", context="KSA VAT Return"),
+			"fieldtype": "Data",
+			"width": 200,
+		},
 		{"fieldname": "tax_id", "label": _("Tax ID"), "fieldtype": "Data", "width": 140},
 		{"fieldname": "category", "label": _("VAT Category"), "fieldtype": "Data", "width": 170},
 		{"fieldname": "rate", "label": _("Rate (%)"), "fieldtype": "Percent", "width": 80},
 		{"fieldname": "is_adjustment", "label": _("Adjustment"), "fieldtype": "Check", "width": 90},
 		{
 			"fieldname": "taxable_amount",
-			"label": _("Taxable Amount"),
+			"label": _("Taxable Amount", context="KSA VAT Return"),
 			"fieldtype": "Currency",
 			"options": "currency",
 			"width": 140,

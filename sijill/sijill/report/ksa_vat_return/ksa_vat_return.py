@@ -82,11 +82,16 @@ def validate_filters(filters):
 
 def get_columns():
 	return [
-		{"fieldname": "no", "label": _("No"), "fieldtype": "Data", "width": 50},
-		{"fieldname": "legend", "label": _("Description"), "fieldtype": "Data", "width": 420},
+		{"fieldname": "no", "label": _("No", context="KSA VAT Return"), "fieldtype": "Data", "width": 50},
+		{
+			"fieldname": "legend",
+			"label": _("Description", context="KSA VAT Return"),
+			"fieldtype": "Data",
+			"width": 420,
+		},
 		{
 			"fieldname": "amount",
-			"label": _("Amount"),
+			"label": _("Amount", context="KSA VAT Return"),
 			"fieldtype": "Currency",
 			"options": "currency",
 			"width": 150,

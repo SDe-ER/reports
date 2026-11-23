@@ -34,7 +34,7 @@
 	<table>
 		<thead>
 			<tr>
-				<th class="no">{%= __("No") %}</th>
+				<th class="no">{%= __("No", null, "KSA VAT Return") %}</th>
 				{% for (var i = 0; i < columns.length; i++) { %}
 				<th class="{%= columns[i].fieldtype === "Currency" ? "num" : "" %}">{%= columns[i].label %}</th>
 				{% } %}
