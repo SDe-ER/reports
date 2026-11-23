@@ -7,7 +7,7 @@ on:
   pull_request:
 
 concurrency:
-  group: ci-sdce_reports-${{ github.event.number }}
+  group: ci-sijill-${{ github.event.number }}
   cancel-in-progress: true
 
 jobs:
@@ -89,10 +89,10 @@ jobs:
         working-directory: /home/runner/frappe-bench
         run: |
           bench get-app erpnext --branch version-16
-          bench get-app sdce_reports $GITHUB_WORKSPACE
+          bench get-app sijill $GITHUB_WORKSPACE
           bench setup requirements --dev
           bench new-site --db-root-password root --admin-password admin test_site
-          bench --site test_site install-app sdce_reports
+          bench --site test_site install-app sijill
           bench build
         env:
           CI: 'Yes'
@@ -101,6 +101,6 @@ jobs:
         working-directory: /home/runner/frappe-bench
         run: |
           bench --site test_site set-config allow_tests true
-          bench --site test_site run-tests --app sdce_reports
+          bench --site test_site run-tests --app sijill
         env:
           TYPE: server

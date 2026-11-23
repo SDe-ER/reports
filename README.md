@@ -1,11 +1,10 @@
-# SDCE Reports
+# Sijill
 
 Documentation: https://sde-er.github.io/reports/ (English and العربية)
 
-Frappe / ERPNext app (`sdce_reports`) that holds every report SDCE develops or adds to its ERPNext system.
-One place, version controlled, tested, installed with `bench`.
+**Sijill** (سِجِلّ, "record") is a Frappe / ERPNext app for reports: each one standard, tested, translated and installed with bench.
 
-تطبيق Frappe / ERPNext يجمع كل التقارير التي تطوّرها أو تضيفها SDCE على نظام ERPNext، في مكان واحد مُدار بالإصدارات ومُختبر.
+**سِجِلّ** تطبيق Frappe / ERPNext للتقارير: كل تقرير قياسي ومختبر ومترجم ويُثبَّت بأداة bench.
 
 ## Requirements
 
@@ -53,14 +52,14 @@ One place, version controlled, tested, installed with `bench`.
 
 ```bash
 bench get-app https://github.com/SDe-ER/reports
-bench --site <site> install-app sdce_reports
+bench --site <site> install-app sijill
 ```
 
 ## Development
 
 ```bash
 bench --site <test-site> set-config allow_tests true
-bench --site <test-site> run-tests --app sdce_reports
+bench --site <test-site> run-tests --app sijill
 ```
 
 All changes go through a pull request. Do not commit company data, exports, backups or credentials.

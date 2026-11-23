@@ -1,4 +1,4 @@
-# Arabic translations for SDCE Reports.
+# Arabic translations for Sijill.
 # License: GPL-3.0-or-later
 msgid ""
 msgstr ""

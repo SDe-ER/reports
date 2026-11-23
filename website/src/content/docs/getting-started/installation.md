@@ -1,6 +1,6 @@
 ---
 title: Installation
-description: Requirements and installing SDCE Reports with bench.
+description: Requirements and installing Sijill with bench.
 sidebar:
   order: 2
 ---
@@ -20,7 +20,7 @@ Run these commands from your bench directory. Replace `<your-site>` with your si
 ```bash
 cd frappe-bench
 bench get-app https://github.com/SDe-ER/reports --branch main
-bench --site <your-site> install-app sdce_reports
+bench --site <your-site> install-app sijill
 ```
 
 The installer adds the reports and the **KSA VAT Settings** form. It does not change existing documents
@@ -29,20 +29,20 @@ or settings.
 ## Upgrade
 
 ```bash
-bench update --apps sdce_reports
+bench update --apps sijill
 ```
 
 or, on a bench you manage by hand:
 
 ```bash
-cd apps/sdce_reports && git pull && cd ../..
+cd apps/sijill && git pull && cd ../..
 bench --site <your-site> migrate
 ```
 
 ## Uninstall
 
 ```bash
-bench --site <your-site> uninstall-app sdce_reports
+bench --site <your-site> uninstall-app sijill
 ```
 
 Uninstalling removes the reports and the settings form. Your documents and ledger entries are not touched.

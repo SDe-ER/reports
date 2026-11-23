@@ -1,11 +1,11 @@
 ---
 title: Introduction
-description: What SDCE Reports is, who it is for and how its reports work.
+description: What Sijill is, who it is for and how its reports work.
 sidebar:
   order: 1
 ---
 
-SDCE Reports is a Frappe app that holds reports added to ERPNext. Instead of one-off query reports typed into a
+Sijill is a Frappe app that holds reports added to ERPNext. Instead of one-off query reports typed into a
 site, every report lives in this repository as a **standard report**: its code is reviewed, tested on a clean site,
 translated, and installed or upgraded with `bench`, like the reports that ship with ERPNext.
 
@@ -17,7 +17,7 @@ translated, and installed or upgraded with `bench`, like the reports that ship w
   The repository holds no company data.
 - **Traceable.** A summary report and its detail report use the same calculation, so every total can be followed to
   the vouchers behind it.
-- **Bilingual.** Labels are written in English and translated to Arabic in `sdce_reports/locale/ar.po`.
+- **Bilingual.** Labels are written in English and translated to Arabic in `sijill/locale/ar.po`.
 
 ## Reports
 
@@ -27,6 +27,6 @@ translated, and installed or upgraded with `bench`, like the reports that ship w
 | [KSA VAT Return Detail](/reports/reports/ksa-vat-return-detail/) | The vouchers behind each amount of the return. |
 
 :::caution
-SDCE Reports is not affiliated with or certified by ZATCA. Check every figure against your books before you file a
+Sijill is not affiliated with or certified by ZATCA. Check every figure against your books before you file a
 return.
 :::

@@ -6,7 +6,7 @@ from erpnext.controllers.sales_and_purchase_return import make_return_doc
 from erpnext.tests.utils import ERPNextTestSuite
 from frappe.utils import nowdate
 
-from sdce_reports.sdce_reports.report.ksa_vat_return.ksa_vat_return import (
+from sijill.sijill.report.ksa_vat_return.ksa_vat_return import (
 	EXCLUDED,
 	EXPORTS,
 	STANDARD_RATED_PURCHASES,
@@ -14,7 +14,7 @@ from sdce_reports.sdce_reports.report.ksa_vat_return.ksa_vat_return import (
 	ZERO_RATED_SALES,
 	execute,
 )
-from sdce_reports.sdce_reports.report.ksa_vat_return_detail.ksa_vat_return_detail import (
+from sijill.sijill.report.ksa_vat_return_detail.ksa_vat_return_detail import (
 	execute as execute_detail,
 )
 

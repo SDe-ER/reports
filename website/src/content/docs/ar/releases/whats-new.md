@@ -1,6 +1,6 @@
 ---
 title: الجديد
-description: كل تغيير في تقارير SDCE بلغة واضحة.
+description: كل تغيير في سِجِلّ (Sijill) بلغة واضحة.
 sidebar:
   order: 1
 ---

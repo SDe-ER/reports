@@ -27,7 +27,7 @@ from erpnext.accounts.report.utils import validate_date_range
 from frappe import _
 from frappe.utils import flt, getdate
 
-from sdce_reports.sdce_reports.doctype.ksa_vat_settings.ksa_vat_settings import get_ksa_vat_accounts
+from sijill.sijill.doctype.ksa_vat_settings.ksa_vat_settings import get_ksa_vat_accounts
 
 STANDARD_RATED_SALES = "Standard Rated Sales"
 ZERO_RATED_SALES = "Zero Rated Domestic Sales"

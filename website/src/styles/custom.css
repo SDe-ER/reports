@@ -1,4 +1,4 @@
-/* SDCE Reports docs — typography and screenshot styling.
+/* Sijill docs — typography and screenshot styling.
  * Arabic text uses IBM Plex Sans Arabic (self-hosted from @fontsource, SIL Open Font License),
  * with Latin text in the same family so mixed Arabic/English lines share one rhythm. */
 @import "@fontsource/ibm-plex-sans-arabic/400.css";
