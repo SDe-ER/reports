@@ -7,7 +7,7 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 
-from sdce_reports.sdce_reports.report.ksa_vat_return.ksa_vat_return import (
+from sijill.sijill.report.ksa_vat_return.ksa_vat_return import (
 	PURCHASE_CATEGORIES,
 	SALES_CATEGORIES,
 	get_vat_lines,

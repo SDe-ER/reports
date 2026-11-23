@@ -1,5 +1,5 @@
-app_name = "sdce_reports"
-app_title = "SDCE Reports"
+app_name = "sijill"
+app_title = "Sijill"
 app_publisher = "SDCE"
 app_description = "Financial and operational reports for ERPNext, starting with the Saudi VAT return"
 app_email = ""

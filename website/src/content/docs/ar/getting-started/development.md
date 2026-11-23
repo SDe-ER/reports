@@ -9,7 +9,7 @@ sidebar:
 
 ```bash
 bench --site <test-site> set-config allow_tests true
-bench --site <test-site> run-tests --app sdce_reports
+bench --site <test-site> run-tests --app sijill
 ```
 
 تنشئ الاختبارات شركة وحسابات وأطرافاً ومستندات وهمية خاصة بها، وتتراجع عنها بعد كل اختبار. لا تشغّلها على موقع الإنتاج.
@@ -20,18 +20,18 @@ bench --site <test-site> run-tests --app sdce_reports
 الاختبارات. قبل فتح طلب الدمج شغّل أيضاً:
 
 ```bash
-ruff format sdce_reports && ruff check sdce_reports
+ruff format sijill && ruff check sijill
 ```
 
 ## إضافة تقرير
 
-1. أنشئ تقريراً قياسياً في وحدة **SDCE Reports** داخل `sdce_reports/sdce_reports/report/<report_name>/`.
+1. أنشئ تقريراً قياسياً في وحدة **Sijill** داخل `sijill/sijill/report/<report_name>/`.
 2. اقرأ البيانات باستعلامات ذات معاملات (`frappe.db.sql` مع `%(name)s`، أو `frappe.qb`). لا تبنِ SQL من مدخلات
    المستخدم.
 3. تحقّق من صلاحية الشركة ومن الفلاتر قبل أي استعلام.
 4. ضع ما يخص الشركة (الحسابات والنسب) في نموذج إعدادات، لا في الكود.
 5. اكتب الاختبارات في `test_<report_name>.py` بجوار التقرير، ومنها مطابقة إجماليات الملخص مع التفاصيل.
-6. أضف الترجمة العربية لكل نص جديد في `sdce_reports/locale/ar.po`.
+6. أضف الترجمة العربية لكل نص جديد في `sijill/locale/ar.po`.
 7. أضف صفحة للتقرير في `website/src/content/docs/reports/` (إنجليزي) و `website/src/content/docs/ar/reports/`
    (عربي)، وسطراً في صفحة **الجديد**.
 

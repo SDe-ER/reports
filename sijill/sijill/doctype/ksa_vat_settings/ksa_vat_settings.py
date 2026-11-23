@@ -16,7 +16,7 @@ class KSAVATSettings(Document):
 	if TYPE_CHECKING:
 		from frappe.types import DF
 
-		from sdce_reports.sdce_reports.doctype.ksa_vat_account.ksa_vat_account import KSAVATAccount
+		from sijill.sijill.doctype.ksa_vat_account.ksa_vat_account import KSAVATAccount
 
 		company: DF.Link
 		ksa_vat_accounts: DF.Table[KSAVATAccount]

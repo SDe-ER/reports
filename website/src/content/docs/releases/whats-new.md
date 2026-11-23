@@ -1,6 +1,6 @@
 ---
 title: What's new
-description: Every change to SDCE Reports in plain language.
+description: Every change to Sijill in plain language.
 sidebar:
   order: 1
 ---

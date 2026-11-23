@@ -1,8 +1,8 @@
 {
-  "name": "sdce-reports-docs",
+  "name": "sijill-docs",
   "private": true,
   "type": "module",
-  "description": "SDCE Reports documentation site (Astro Starlight), published to GitHub Pages",
+  "description": "Sijill documentation site (Astro Starlight), published to GitHub Pages",
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",

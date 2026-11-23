@@ -1,6 +1,6 @@
 ---
 title: التثبيت
-description: المتطلبات وتثبيت تقارير SDCE بأداة bench.
+description: المتطلبات وتثبيت سِجِلّ (Sijill) بأداة bench.
 sidebar:
   order: 2
 ---
@@ -20,7 +20,7 @@ sidebar:
 ```bash
 cd frappe-bench
 bench get-app https://github.com/SDe-ER/reports --branch main
-bench --site <your-site> install-app sdce_reports
+bench --site <your-site> install-app sijill
 ```
 
 يضيف التثبيت التقارير ونموذج **إعدادات ضريبة القيمة المضافة السعودية**، ولا يغيّر أي مستند أو إعداد موجود.
@@ -28,20 +28,20 @@ bench --site <your-site> install-app sdce_reports
 ## التحديث
 
 ```bash
-bench update --apps sdce_reports
+bench update --apps sijill
 ```
 
 أو يدوياً:
 
 ```bash
-cd apps/sdce_reports && git pull && cd ../..
+cd apps/sijill && git pull && cd ../..
 bench --site <your-site> migrate
 ```
 
 ## إزالة التطبيق
 
 ```bash
-bench --site <your-site> uninstall-app sdce_reports
+bench --site <your-site> uninstall-app sijill
 ```
 
 الإزالة تحذف التقارير ونموذج الإعدادات فقط. المستندات والقيود لا تُمس.

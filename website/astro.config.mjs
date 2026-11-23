@@ -1,4 +1,4 @@
-// SDCE Reports documentation site — Astro Starlight, published to GitHub Pages (https://sde-er.github.io/reports/).
+// Sijill documentation site — Astro Starlight, published to GitHub Pages (https://sde-er.github.io/reports/).
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
 
@@ -7,9 +7,9 @@ export default defineConfig({
   base: "/reports",
   integrations: [
     starlight({
-      title: "SDCE Reports",
+      title: "Sijill",
       description: "Reports for Frappe / ERPNext — documentation",
-      logo: { src: "./src/assets/logo.svg", alt: "SDCE Reports" },
+      logo: { src: "./src/assets/logo.svg", alt: "Sijill" },
       favicon: "/favicon.svg",
       defaultLocale: "root",
       locales: {
