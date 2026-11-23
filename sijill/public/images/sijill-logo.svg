@@ -1,0 +1,14 @@
+<svg width="54" height="54" viewBox="0 0 54 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="54" height="54" rx="15.4" fill="#06B58B" fill-opacity="0.1"/>
+<g stroke="#1F876C" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">
+<path d="M24 41.5H14C12.9 41.5 12 40.6 12 39.5V14.5C12 13.4 12.9 12.5 14 12.5H28L35 19.5V23"/>
+<path d="M28 12.5V19.5H35"/>
+<path d="M18 22.5H25"/>
+<path d="M18 28.5H23"/>
+</g>
+<g fill="#1F876C">
+<rect x="27.5" y="33" width="4.4" height="9" rx="1.2"/>
+<rect x="34" y="28.5" width="4.4" height="13.5" rx="1.2"/>
+<rect x="40.5" y="24" width="4.4" height="18" rx="1.2"/>
+</g>
+</svg>
