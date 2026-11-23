@@ -25,7 +25,7 @@
 		<p class="company">{%= frappe.utils.escape_html(filters.company || "") %}</p>
 		<p class="title">{%= __("VAT Return") %}</p>
 		{% if (first.company_tax_id) { %}
-		<p class="period">{%= __("VAT Registration Number") %}: {%= frappe.utils.escape_html(first.company_tax_id) %}</p>
+		<p class="period">{%= __("VAT Registration Number", null, "KSA VAT Return") %}: {%= frappe.utils.escape_html(first.company_tax_id) %}</p>
 		{% } %}
 		<p class="period">
 			{%= __("For the period from {0} to {1}", [frappe.datetime.str_to_user(filters.from_date), frappe.datetime.str_to_user(filters.to_date)]) %}

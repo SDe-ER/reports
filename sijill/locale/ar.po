@@ -145,6 +145,7 @@ msgstr "إجمالي المبيعات"
 msgid "VAT Account"
 msgstr "حساب الضريبة"
 
+msgctxt "KSA VAT Return"
 msgid "VAT Amount"
 msgstr "مبلغ ضريبة القيمة المضافة"
 
@@ -154,6 +155,7 @@ msgstr "تصنيف الضريبة"
 msgid "VAT Due"
 msgstr "ملخص الالتزامات الضريبية"
 
+msgctxt "KSA VAT Return"
 msgid "VAT Registration Number"
 msgstr "الرقم الضريبي"
 
