@@ -7,24 +7,18 @@ All notable changes to Sijill are recorded here. The format follows
 ## [Unreleased]
 
 ### Added
-- Data rules for the KSA VAT Return. A purchase voucher (Purchase Invoice, Journal Entry or other voucher posting to an
-  Input VAT account) is left out of the return and of the detail report unless it has a supplier invoice number that is
-  not used on another voucher of the same supplier, a supplier name, a valid supplier VAT number (15 digits, starts and
-  ends with 3), the new check "Buyer details verified on supplier invoice" and an attachment. The invoice number rule
-  applies only to voucher types that have such a field, and the check only to voucher types that have the new field
-  (Purchase Invoice and Journal Entry). A voucher that reduces input VAT is never left out (excluding it would increase
-  the VAT claim): it stays in the return and is listed with the code REDUCTION_KEPT. Sales are never left out; missing
-  customer data is only reported.
-- Report "VAT Documents Requiring Completion": one row per voucher that is excluded, warned about, reclassified or
-  (optionally) not reported, with the failed rules in English and Arabic and a link to the voucher.
+- KSA VAT Settings: the date field "Output VAT from Sales Invoices only, from date". From that date (empty: every
+  date) the KSA VAT Return is built from invoices. Output VAT is counted only from Sales Invoices (also credit and
+  debit notes); a Journal Entry or other voucher with output VAT is left out and listed with the code
+  OUTPUT_VAT_BY_JOURNAL_ENTRY. Input VAT is counted only from Purchase Invoices and Journal Entries
+  (INPUT_VAT_SOURCE_NOT_ALLOWED for other vouchers) that pass four rules: a supplier with a name, a supplier invoice
+  number that is not used twice by the same supplier, a valid supplier VAT number (15 digits, starts and ends with 3)
+  and the new check "Buyer details verified on supplier invoice". A missing attachment is only a warning. An excluded
+  voucher that reduces input VAT also gets REDUCTION_EXCLUDED. Before the date nothing is left out; missing data is
+  only listed as "Included (warning)".
+- Report "VAT Documents Requiring Completion": one row per voucher that is excluded, warned about or (optionally) not
+  reported, with the failed rules in English and Arabic and a link to the voucher.
 - Custom Field "Buyer details verified on supplier invoice" on Purchase Invoice and Journal Entry (fixture).
-- Reclassification pairs: a Journal Entry that names the entry it reclassifies (new Custom Field "Reclassification Of")
-  and fully reverses its VAT on every VAT account it posts to is removed together with the original from the return, the
-  detail and the Amount and Adjustment columns, and listed by VAT Documents Requiring Completion with the status
-  "Reclassified". This applies only when the original and all its reclassification entries are inside the report
-  period and no chain exists (the original is not itself a reclassification, and no reclassification entry is itself
-  reclassified). Otherwise nothing is removed and the entries are flagged: RECLASS_OTHER_PERIOD (pair complete but
-  partly outside the period) or RECLASS_PARTIAL.
 
 ### Changed
 - KSA VAT Return Detail lists only the vouchers counted in the return, with invoice number, party name and tax ID on

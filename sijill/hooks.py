@@ -30,7 +30,6 @@ fixtures = [
 				[
 					"Purchase Invoice-sijill_buyer_details_verified",
 					"Journal Entry-sijill_buyer_details_verified",
-					"Journal Entry-sijill_reclassification_of",
 				],
 			]
 		],

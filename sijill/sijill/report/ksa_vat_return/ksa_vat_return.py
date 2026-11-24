@@ -23,9 +23,11 @@ Not reported
 - Opening entries.
 Both are listed by the VAT Documents Requiring Completion report with the status "Not reported".
 
-Data rules
-- A purchase voucher that fails a data rule (see data_rules.py) is left out of the return and of the detail
-  report; it is listed by VAT Documents Requiring Completion. Sales are never left out.
+Data rules (see data_rules.py)
+- From the date set in KSA VAT Settings (empty: every date) output VAT is counted only from Sales Invoices, and
+  input VAT only from Purchase Invoices and Journal Entries that pass the supplier, invoice number, supplier VAT
+  number and buyer details rules. Other lines are left out of the return and of the detail report and are listed
+  by VAT Documents Requiring Completion. Before the date nothing is left out.
 """
 
 import frappe

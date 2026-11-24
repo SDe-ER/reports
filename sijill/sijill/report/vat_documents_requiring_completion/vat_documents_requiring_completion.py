@@ -87,12 +87,6 @@ def get_columns():
 			"options": "currency",
 			"width": 130,
 		},
-		{
-			"fieldname": "reclass_pair",
-			"label": _("Reclassification Pair", context="KSA VAT Return"),
-			"fieldtype": "Data",
-			"width": 170,
-		},
 		{"fieldname": "side", "label": _("Sales / Purchase"), "fieldtype": "Data", "width": 90},
 		{
 			"fieldname": "status",

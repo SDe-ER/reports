@@ -4,7 +4,7 @@
 import frappe
 from erpnext.controllers.sales_and_purchase_return import make_return_doc
 from erpnext.tests.utils import ERPNextTestSuite
-from frappe.utils import flt, nowdate
+from frappe.utils import add_days, flt, nowdate
 
 from sijill.sijill.report.ksa_vat_return.ksa_vat_return import (
 	EXCLUDED,
@@ -78,6 +78,7 @@ class TestKSAVATReturn(ERPNextTestSuite):
 		make_sales_invoice(rate=300, vat_rate=0)
 		make_sales_invoice(rate=400, vat_rate=0, customer=EXPORT_CUSTOMER)
 		make_purchase_invoice(rate=500, bill_no="SUP-0001")
+		set_cutoff(add_days(nowdate(), 30))
 		make_vat_journal_entry(net=100)
 		make_settlement_journal_entry()
 
@@ -105,6 +106,7 @@ class TestKSAVATReturn(ERPNextTestSuite):
 		credit_note.submit()
 		make_sales_invoice(rate=400, vat_rate=0, customer=EXPORT_CUSTOMER)
 		make_purchase_invoice(rate=500, bill_no="SUP-0002")
+		set_cutoff(add_days(nowdate(), 30))
 		make_vat_journal_entry(net=100)
 
 		boxes, _data = self.summary()
@@ -192,9 +194,9 @@ class TestKSAVATReturn(ERPNextTestSuite):
 			[("Not reported", -150)],
 		)
 
-	def test_vat_charged_by_the_bank_is_a_purchase_without_data(self):
+	def test_vat_charged_by_the_bank_is_excluded(self):
 		"""Input VAT a bank charges on its fees (Dr Input VAT, Cr Bank) is a purchase, not a settlement. It has
-		no supplier invoice data, so the data rules leave it out and the exceptions report lists it."""
+		no supplier and no invoice data, so the data rules leave it out and the exceptions report lists it."""
 		bank = frappe.db.get_value(
 			"Account", {"company": COMPANY, "account_type": ("in", ["Bank", "Cash"]), "is_group": 0}, "name"
 		)
@@ -220,7 +222,7 @@ class TestKSAVATReturn(ERPNextTestSuite):
 			row["failed_codes"].split("; "),
 			[
 				"BILL_NO_MISSING",
-				"SUPPLIER_NAME_MISSING",
+				"SUPPLIER_MISSING",
 				"SUPPLIER_VAT_INVALID",
 				"BUYER_DETAILS_NOT_VERIFIED",
 				"ATTACHMENT_MISSING",
@@ -338,24 +340,29 @@ class TestKSAVATReturn(ERPNextTestSuite):
 			[(je.name, "_Test KSA Bank")],
 		)
 
-	def test_reclassification_entries_net_out(self):
-		"""Owner 2026-11-23: VAT removed by a reclassification JE (Dr Output VAT / Cr Sales; Dr Bank Charges /
-		Cr Input VAT) instead of cancelling the original entry. The return nets both to zero VAT."""
+	def test_reclassification_entries_are_left_out(self):
+		"""A Journal Entry with output VAT and the entry that reverses it (no supplier or customer) both leave
+		the return; so do a bank VAT entry and the unlinked entry that reverses it (Dr expense / Cr Input VAT)."""
+		si = make_sales_invoice(rate=1000)
+		before, _data = self.summary()
 		make_vat_journal_entry(net=100)
 		reclass(OUTPUT_VAT, f"Sales - {ABBR}", 15, debit_vat=True)
-		original = make_purchase_journal_entry(vat=30, bill_no="JE-BILL-RC")
-		reclass(INPUT_VAT, f"Cost of Goods Sold - {ABBR}", 30, link=original.name)
+		make_bank_vat_journal_entry(30)
+		reclass(INPUT_VAT, f"Cost of Goods Sold - {ABBR}", 30)
 
 		boxes, _data = self.summary()
-		self.assertEqual(boxes["1"]["vat_amount"], 0)
-		self.assertEqual(boxes["1"]["amount"] + boxes["1"]["adjustment"], 0)
+		for no in ("1", "6", "7", "12", "13"):
+			self.assertEqual(boxes[no], before[no], no)
 		self.assertEqual(boxes["7"]["vat_amount"], 0)
-		self.assertEqual(boxes["7"]["amount"] + boxes["7"]["adjustment"], 0)
-		self.assertEqual(boxes["13"]["vat_amount"], 0)
+		rows = self.exceptions()
+		self.assertNotIn(si.name, rows)
+		self.assertEqual({row["status"] for row in rows.values()}, {"Excluded"})
+		self.assertEqual(len(rows), 4)
 
 	def test_vat_account_without_tax_rate(self):
 		frappe.db.set_value("Account", OUTPUT_VAT, "tax_rate", 0)
 		frappe.clear_cache()
+		set_cutoff(add_days(nowdate(), 30))
 		make_vat_journal_entry(net=100)
 		boxes, _data = self.summary()
 		self.assertEqual((boxes["1"]["amount"], boxes["1"]["vat_amount"]), (0, 15))
@@ -656,12 +663,15 @@ def make_purchase_journal_entry(
 	attach=True,
 	cheque_no=None,
 	posting_date=None,
+	reduction=False,
 ):
 	"""A purchase booked as a Journal Entry: Dr Input VAT and expense, Cr Creditors with a Supplier party row.
 	Complete by default. Turn an element off with bill_no=None, verified=False or attach=False;
-	party_type="Customer" books the credit to a Customer, party_type=None to a bank account (no party)."""
+	party_type="Customer" books the credit to a Customer, party_type=None to a bank account (no party).
+	reduction=True reverses every side (Cr Input VAT and expense, Dr Creditors): a purchase that reduces VAT."""
 	net = flt(vat * 100 / 15, 2)
-	credit = {"credit_in_account_currency": net + vat, "cost_center": f"Main - {ABBR}"}
+	expense_side, credit_side = ("credit", "debit") if reduction else ("debit", "credit")
+	credit = {f"{credit_side}_in_account_currency": net + vat, "cost_center": f"Main - {ABBR}"}
 	if party_type == "Supplier":
 		credit.update({"account": f"Creditors - {ABBR}", "party_type": "Supplier", "party": supplier})
 	elif party_type == "Customer":
@@ -684,10 +694,14 @@ def make_purchase_journal_entry(
 			"accounts": [
 				{
 					"account": f"Cost of Goods Sold - {ABBR}",
-					"debit_in_account_currency": net,
+					f"{expense_side}_in_account_currency": net,
 					"cost_center": f"Main - {ABBR}",
 				},
-				{"account": INPUT_VAT, "debit_in_account_currency": vat, "cost_center": f"Main - {ABBR}"},
+				{
+					"account": INPUT_VAT,
+					f"{expense_side}_in_account_currency": vat,
+					"cost_center": f"Main - {ABBR}",
+				},
 				credit,
 			],
 		}
@@ -775,16 +789,19 @@ def make_bank_vat_journal_entry(vat):
 	return bank
 
 
-def reclass(vat_account, other_account, amount, debit_vat=False, link=None, posting_date=None):
-	"""Reclassification JE: moves `amount` between a VAT account and a revenue or expense account. link: the
-	Journal Entry whose VAT it reclassifies (custom field sijill_reclassification_of)."""
+def set_cutoff(date):
+	"""KSA VAT Settings "Output VAT from Sales Invoices only, from date" of the test company; None: empty."""
+	frappe.db.set_value("KSA VAT Settings", COMPANY, "output_vat_invoices_only_from", date)
+
+
+def reclass(vat_account, other_account, amount, debit_vat=False, posting_date=None):
+	"""Journal Entry without a party that moves `amount` between a VAT account and a revenue or expense account."""
 	vat_side, other_side = ("debit", "credit") if debit_vat else ("credit", "debit")
 	je = frappe.get_doc(
 		{
 			"doctype": "Journal Entry",
 			"company": COMPANY,
 			"posting_date": posting_date or nowdate(),
-			"sijill_reclassification_of": link,
 			"accounts": [
 				{
 					"account": vat_account,

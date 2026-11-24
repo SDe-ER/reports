@@ -291,15 +291,8 @@ msgstr "تم التحقق من بيانات المؤسسة على الفاتور
 msgid "The supplier invoice shows the company's full name, VAT number and address."
 msgstr "فاتورة المورد تُظهر اسم المؤسسة الكامل ورقمها الضريبي وعنوانها."
 
-msgid "Reclassified"
-msgstr "أُعيد تصنيفها"
+msgid "Output VAT from Sales Invoices only, from date"
+msgstr "ضريبة المخرجات من فواتير المبيعات فقط، اعتباراً من تاريخ"
 
-msgctxt "KSA VAT Return"
-msgid "Reclassification Pair"
-msgstr "القيد المقابل لإعادة التصنيف"
-
-msgid "Reclassification Of"
-msgstr "إعادة تصنيف للقيد"
-
-msgid "The Journal Entry whose VAT this entry reclassifies."
-msgstr "قيد اليومية الذي يعيد هذا القيد تصنيف ضريبته."
+msgid "From this date the return takes output VAT only from Sales Invoices and counts purchase VAT only from complete Purchase Invoices and Journal Entries. Before it the return works as before. Empty: the rules apply to every date."
+msgstr "من هذا التاريخ يأخذ الإقرار ضريبة المخرجات من فواتير المبيعات فقط، ويحتسب ضريبة المشتريات من فواتير المشتريات وقيود اليومية المكتملة فقط. قبله يعمل الإقرار كما كان. إذا ترك فارغاً تُطبق القواعد على كل التواريخ."

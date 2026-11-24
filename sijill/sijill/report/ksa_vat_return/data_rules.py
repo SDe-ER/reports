@@ -3,23 +3,27 @@
 
 """Data rules of the KSA VAT Return.
 
-Every voucher behind the return is checked for the data a VAT return needs.
+The return is built from invoices. The rules start on the date in KSA VAT Settings, "Output VAT from Sales
+Invoices only, from date" (empty: every date). Lines before that date keep the earlier behaviour: nothing is
+left out, and missing data is only listed with the status "Included (warning)".
 
-Purchase side (input VAT): a voucher that fails any rule is left out of the return and of the detail report
-and is listed in "VAT Documents Requiring Completion" with the status "Excluded". The rules are: supplier
-invoice number present and not used twice by the same supplier (only for voucher types that have such a
-field: Purchase Invoice, Journal Entry, Payment Entry), supplier name, valid supplier VAT number, the check
-"Buyer details verified" (only for voucher types that have the custom field: Purchase Invoice and Journal
-Entry) and an attachment. A voucher that reduces input VAT (net VAT below zero) is never left out, because
-excluding it would increase the VAT claim: it stays in the return with the status "Included (warning)" and
-the code REDUCTION_KEPT. Input VAT is deducted only
-with a valid tax invoice in hand (ZATCA Guideline for Tax Invoicing and Records under VAT Provisions v3, May
-2026, sections 9.1 and 9.4); a document received later can be deducted in a later period (Implementing
-Regulations Article 49).
+From the date on:
 
-Sales side (output VAT): never left out, because VAT is collected on every taxable sale (same guideline,
-section 1.3). Missing customer data is only reported, with the status "Included (warning)". A simplified tax
-invoice carries no customer details (section 4.3, Implementing Regulations Article 53).
+Sales side (output VAT): only Sales Invoices (also credit and debit notes) count. A line of any other voucher
+on the sales side (for example a Journal Entry) is left out and listed with the status "Excluded" and the code
+OUTPUT_VAT_BY_JOURNAL_ENTRY. A Sales Invoice is never left out: VAT is collected on every taxable sale (ZATCA
+Guideline for Tax Invoicing and Records under VAT Provisions v3, May 2026, section 1.3). Missing customer data is
+only reported, with the status "Included (warning)". A simplified tax invoice carries no customer details
+(section 4.3, Implementing Regulations Article 53).
+
+Purchase side (input VAT): only Purchase Invoices and Journal Entries count; a line of any other voucher is left
+out (INPUT_VAT_SOURCE_NOT_ALLOWED). A voucher must pass four rules or it is left out of the return and of the
+detail report and listed with the status "Excluded": (a) a supplier with a name, (b) a supplier invoice number
+that is not used twice by the same supplier, (c) a valid supplier VAT number, (d) the check "Buyer details
+verified". A missing attachment is only a warning. A voucher that reduces input VAT follows the same rules; when
+it is excluded it also gets REDUCTION_EXCLUDED, because excluding it increases the VAT claim. Input VAT is deducted
+only with a valid tax invoice in hand (same guideline, sections 9.1 and 9.4); a document received later can be
+deducted in a later period (Implementing Regulations Article 49).
 
 Settlement and opening entries are not part of the rules; they are listed with the status "Not reported".
 
@@ -30,9 +34,12 @@ import re
 
 import frappe
 from frappe import _
-from frappe.utils import flt
+from frappe.utils import flt, getdate
 
-from sijill.sijill.doctype.ksa_vat_settings.ksa_vat_settings import get_ksa_vat_accounts
+from sijill.sijill.doctype.ksa_vat_settings.ksa_vat_settings import (
+	get_ksa_vat_accounts,
+	get_rules_from_date,
+)
 from sijill.sijill.report.ksa_vat_return.ksa_vat_return import (
 	EXCLUDED,
 	PURCHASE_CATEGORIES,
@@ -47,7 +54,7 @@ RULES = {
 		"Supplier invoice number is used on more than one voucher of the same supplier",
 		"رقم فاتورة المورد مكرر على أكثر من مستند للمورد نفسه",
 	),
-	"SUPPLIER_NAME_MISSING": ("Supplier name is missing", "اسم المورد غير موجود"),
+	"SUPPLIER_MISSING": ("Supplier is missing", "المورد غير موجود"),
 	"SUPPLIER_VAT_INVALID": (
 		"Supplier VAT number is missing or invalid (15 digits, starts and ends with 3)",
 		"الرقم الضريبي للمورد غير موجود أو غير صحيح (15 رقماً يبدأ وينتهي بالرقم 3)",
@@ -60,10 +67,17 @@ RULES = {
 		"No attachment (copy of the supplier invoice)",
 		"لا يوجد مرفق (صورة فاتورة المورد)",
 	),
-	"REDUCTION_KEPT": (
-		"Reduces input VAT: kept in the return although data is missing, because excluding it would increase "
-		"the VAT claim. Complete it.",
-		"يخفض ضريبة المدخلات: بقي في الإقرار رغم نقص البيانات لأن استبعاده يزيد المطالبة. استكمله.",
+	"REDUCTION_EXCLUDED": (
+		"Reduces input VAT: excluding it increases the VAT claim. Complete it.",
+		"يخفض ضريبة المدخلات: استبعاده يزيد المطالبة بالضريبة. استكمله.",
+	),
+	"INPUT_VAT_SOURCE_NOT_ALLOWED": (
+		"Input VAT only from a Purchase Invoice or a Journal Entry",
+		"ضريبة المدخلات من فاتورة مشتريات أو قيد يومية فقط",
+	),
+	"OUTPUT_VAT_BY_JOURNAL_ENTRY": (
+		"Output VAT posted by Journal Entry - not allowed",
+		"ضريبة مخرجات مسجلة بقيد يومية - غير مسموح",
 	),
 	"CUSTOMER_NAME_MISSING": ("Customer name is missing", "اسم العميل غير موجود"),
 	"CUSTOMER_ID_MISSING": (
@@ -74,15 +88,6 @@ RULES = {
 		"Customer VAT number is invalid (15 digits, starts and ends with 3)",
 		"الرقم الضريبي للعميل غير صحيح (15 رقماً يبدأ وينتهي بالرقم 3)",
 	),
-	"VAT_RECLASSIFIED": ("VAT reclassified (owner decision)", "ضريبة أعيد تصنيفها (قرار المالك)"),
-	"RECLASS_PARTIAL": (
-		"Partial VAT reclassification: not excluded. Review it.",
-		"إعادة تصنيف جزئية للضريبة: لم تُستبعد. راجعها.",
-	),
-	"RECLASS_OTHER_PERIOD": (
-		"VAT reclassification in another period: kept here as a correction in its own period. Review it.",
-		"إعادة تصنيف الضريبة في فترة أخرى: بقيت هنا كتصحيح في فترتها. راجعها.",
-	),
 	"NOT_A_TAXABLE_TRANSACTION": (
 		"Not a taxable transaction: settlement, VAT payment or opening entry",
 		"ليست عملية خاضعة للضريبة: تسوية أو سداد ضريبة أو قيد افتتاحي",
@@ -92,7 +97,7 @@ RULES = {
 PURCHASE_RULES = (
 	"BILL_NO_MISSING",
 	"BILL_NO_DUPLICATE",
-	"SUPPLIER_NAME_MISSING",
+	"SUPPLIER_MISSING",
 	"SUPPLIER_VAT_INVALID",
 	"BUYER_DETAILS_NOT_VERIFIED",
 	"ATTACHMENT_MISSING",
@@ -107,9 +112,9 @@ ADDITIONAL_IDS_FIELD = "custom_additional_ids"
 STATUS_EXCLUDED = "Excluded"
 STATUS_WARNING = "Included (warning)"
 STATUS_NOT_REPORTED = "Not reported"
-STATUS_RECLASSIFIED = "Reclassified"
 
-RECLASS_FIELD = "sijill_reclassification_of"
+# voucher types that may carry input VAT from the cutoff date on
+INPUT_VAT_SOURCES = ("Purchase Invoice", "Journal Entry")
 
 # the supplier invoice number field of each voucher type
 BILL_FIELDS = {"Purchase Invoice": "bill_no", "Journal Entry": "bill_no", "Payment Entry": "reference_no"}
@@ -126,53 +131,77 @@ def evaluate_lines(lines, company):
 	"""Apply the rules to lines from get_vat_lines(include_excluded=True).
 
 	Returns (included_lines, exception_rows). included_lines are the lines of the return; their bill_no,
-	party_name and tax_id are filled (a marker on sales lines where the data is missing). exception_rows has
-	one row per voucher and side that is excluded, warned about or not reported.
+	party_name and tax_id are filled (a marker where the data is missing). exception_rows has one row per
+	voucher and side that is excluded, warned about or not reported.
 	"""
 	accounts = get_ksa_vat_accounts(company)
-	lines, pair_rows, flags = exclude_reclass_pairs(lines, company)
+	cutoff = get_rules_from_date(company)
 	groups = {}
 	for line in lines:
 		not_reported = line.category == EXCLUDED
 		side = get_side(line, accounts)
 		groups.setdefault((line.voucher_type, line.voucher_no, side, not_reported), []).append(line)
 
-	purchase_keys = [k for k, v in groups.items() if v[0].category in PURCHASE_CATEGORIES]
-	sales_keys = [k for k, v in groups.items() if v[0].category in SALES_CATEGORIES]
+	def rules_apply(group):
+		return cutoff is None or getdate(group[0].posting_date) >= cutoff
+
+	def is_sales_source_allowed(key, group):
+		return key[0] == "Sales Invoice" or not rules_apply(group)
+
+	def is_purchase_source_allowed(key, group):
+		return key[0] in INPUT_VAT_SOURCES or not rules_apply(group)
+
+	purchase_keys = [
+		k
+		for k, v in groups.items()
+		if v[0].category in PURCHASE_CATEGORIES and is_purchase_source_allowed(k, v)
+	]
+	sales_keys = [
+		k for k, v in groups.items() if v[0].category in SALES_CATEGORIES and is_sales_source_allowed(k, v)
+	]
+	purchase_set, sales_set = set(purchase_keys), set(sales_keys)
 	purchases = PurchaseFacts(company, accounts, purchase_keys, groups)
 	sales = SalesFacts(sales_keys, groups)
 
 	included = []
-	exceptions = list(pair_rows)
+	exceptions = []
 	for key, group in groups.items():
 		first = group[0]
+		vat = flt(sum(flt(line.vat_amount) for line in group), 2)
 		if first.category == EXCLUDED:
-			codes = ["NOT_A_TAXABLE_TRANSACTION", *get_flags(flags, key)]
-			exceptions.append(get_exception_row(group, key[2], STATUS_NOT_REPORTED, codes))
+			exceptions.append(
+				get_exception_row(group, key[2], STATUS_NOT_REPORTED, ["NOT_A_TAXABLE_TRANSACTION"])
+			)
 		elif first.category in PURCHASE_CATEGORIES:
+			if key not in purchase_set:
+				codes = ["INPUT_VAT_SOURCE_NOT_ALLOWED"] + (["REDUCTION_EXCLUDED"] if vat < 0 else [])
+				exceptions.append(get_exception_row(group, key[2], STATUS_EXCLUDED, codes))
+				continue
 			codes, details = purchases.check(key, group)
-			extra = get_flags(flags, key)
-			vat = sum(flt(line.vat_amount) for line in group)
-			if codes and vat >= 0:
-				row = get_exception_row(group, key[2], STATUS_EXCLUDED, codes + extra)
+			blocking = [code for code in codes if code != "ATTACHMENT_MISSING"]
+			if blocking and rules_apply(group):
+				row = get_exception_row(
+					group, key[2], STATUS_EXCLUDED, codes + (["REDUCTION_EXCLUDED"] if vat < 0 else [])
+				)
 				row.update({k: v for k, v in details.items() if v})
 				exceptions.append(row)
 				continue
 			if codes:
-				# a reduction of input VAT is never left out: excluding it would increase the VAT claim
-				warning = get_exception_row(group, key[2], STATUS_WARNING, [*codes, *extra, "REDUCTION_KEPT"])
-				warning.update({k: v for k, v in details.items() if v})
-				exceptions.append(warning)
-				marker = get_marker()
-				details = {k: v or marker for k, v in details.items()}
-			elif extra:
-				exceptions.append(get_exception_row(group, key[2], STATUS_WARNING, extra))
+				row = get_exception_row(group, key[2], STATUS_WARNING, codes)
+				row.update({k: v for k, v in details.items() if v})
+				exceptions.append(row)
+			marker = get_marker()
+			details = {k: v or marker for k, v in details.items()}
 			for line in group:
 				line.update(details)
 			included += group
 		else:
+			if key not in sales_set:
+				exceptions.append(
+					get_exception_row(group, key[2], STATUS_EXCLUDED, ["OUTPUT_VAT_BY_JOURNAL_ENTRY"])
+				)
+				continue
 			codes, details = sales.check(key, group)
-			codes += get_flags(flags, key)
 			for line in group:
 				line.update(details)
 			included += group
@@ -184,10 +213,6 @@ def evaluate_lines(lines, company):
 	included.sort(key=lambda d: (str(d.posting_date), d.voucher_type, d.voucher_no))
 	exceptions.sort(key=lambda d: (str(d.posting_date), d.voucher_type, d.voucher_no))
 	return included, exceptions
-
-
-def get_flags(flags, key):
-	return list(flags.get(key[1], [])) if key[0] == "Journal Entry" else []
 
 
 def get_side(line, accounts):
@@ -217,7 +242,6 @@ def get_exception_row(group, side, status, codes):
 		failed_codes="; ".join(codes),
 		failed_rules_en="; ".join(RULES[code][0] for code in codes),
 		failed_rules_ar="; ".join(RULES[code][1] for code in codes),
-		reclass_pair=None,
 	)
 	return row
 
@@ -356,11 +380,12 @@ class PurchaseFacts:
 			holders = self.bill_keys.get((supplier, bill_no.casefold()), set()) | {(voucher_type, voucher_no)}
 			if len(holders) > 1:
 				failed.add("BILL_NO_DUPLICATE")
-		if not supplier_name:
-			failed.add("SUPPLIER_NAME_MISSING")
+		if not supplier or not supplier_name:
+			failed.add("SUPPLIER_MISSING")
 		if not is_valid_vat_number(tax_id):
 			failed.add("SUPPLIER_VAT_INVALID")
-		if frappe.get_meta(voucher_type).has_field(BUYER_FIELD) and not doc.get(BUYER_FIELD):
+		# required on every input VAT source (Purchase Invoice, Journal Entry); fails safe when the field is missing
+		if voucher_type in INPUT_VAT_SOURCES and not doc.get(BUYER_FIELD):
 			failed.add("BUYER_DETAILS_NOT_VERIFIED")
 		if voucher_no not in self.attached.get(voucher_type, set()):
 			failed.add("ATTACHMENT_MISSING")
@@ -438,131 +463,3 @@ class SalesFacts:
 			"tax_id": tax_id or other_id or marker,
 		}
 		return codes, details
-
-
-def exclude_reclass_pairs(lines, company):
-	"""Take fully reclassified VAT out of the lines. Returns (remaining_lines, pair_rows, flags).
-
-	A reclassification Journal Entry names the Journal Entry whose VAT it reverses in the custom field
-	sijill_reclassification_of. The VAT of the original and of all its reclassification entries is summed over
-	all dates, with the sign convention of get_gl_lines, on every VAT account that a reclassification entry
-	posts to. The pair is removed only when all of these hold:
-	- on every such account the sums cancel exactly (rounded to 2 places);
-	- no chain: the original is not itself a reclassification and no reclassification entry of it is itself
-	  reclassified;
-	- the original and every reclassification entry have lines in `lines` (all inside the report period).
-	Then the lines of the pair on those accounts leave the lines (both sides) and become pair_rows with the
-	status "Reclassified" and the partner vouchers in `reclass_pair`.
-	Otherwise nothing is removed; flags is {voucher_no: [code]} for the members that have lines, to merge with
-	the other codes of the voucher: RECLASS_OTHER_PERIOD when the pair is complete but some member is outside
-	the period, else RECLASS_PARTIAL. Other lines are untouched. Works on get_vat_lines output.
-	"""
-	if not lines or not frappe.get_meta("Journal Entry").has_field(RECLASS_FIELD):
-		return lines, [], {}
-	accounts = get_ksa_vat_accounts(company)
-	line_entries = {line.voucher_no for line in lines if line.voucher_type == "Journal Entry"}
-	if not line_entries:
-		return lines, [], {}
-
-	# originals: the targets of the reclassification entries in the lines, and the entries in the lines
-	# that may themselves be originals
-	linked = frappe.get_all(
-		"Journal Entry",
-		filters={"name": ("in", sorted(line_entries)), RECLASS_FIELD: ("is", "set")},
-		fields=["name", RECLASS_FIELD],
-	)
-	candidates = line_entries | {row[RECLASS_FIELD] for row in linked}
-	reclass_rows = frappe.get_all(
-		"Journal Entry",
-		filters={"company": company, "docstatus": 1, RECLASS_FIELD: ("in", sorted(candidates))},
-		fields=["name", RECLASS_FIELD],
-	)
-	if not reclass_rows:
-		return lines, [], {}
-	reclasses = {}  # original -> [reclassification entries]
-	for row in reclass_rows:
-		reclasses.setdefault(row[RECLASS_FIELD], []).append(row.name)
-	originals = frappe.get_all(
-		"Journal Entry",
-		filters={"name": ("in", sorted(reclasses)), "company": company, "docstatus": 1},
-		fields=["name", RECLASS_FIELD],
-	)
-	original_links = {row.name: row[RECLASS_FIELD] for row in originals}
-
-	entries = set(reclasses) | {name for names in reclasses.values() for name in names}
-	totals = get_entry_vat(entries, accounts)
-
-	removed = {}  # (voucher_no, account) -> partner vouchers
-	flags = {}
-	for original, names in reclasses.items():
-		members = [original, *names]
-		pair_accounts = sorted({a for name in names for (v, a), vat in totals.items() if v == name and vat})
-		is_chain = bool(original_links.get(original)) or any(name in reclasses for name in names)
-		is_full = (
-			original in original_links
-			and original not in names
-			and not is_chain
-			and bool(pair_accounts)
-			and all(
-				flt(totals.get((original, a), 0.0) + sum(totals.get((n, a), 0.0) for n in names), 2) == 0
-				for a in pair_accounts
-			)
-		)
-		if is_full and all(name in line_entries for name in members):
-			for account in pair_accounts:
-				removed[(original, account)] = sorted(names)
-				for name in names:
-					removed[(name, account)] = [original]
-			continue
-		code = "RECLASS_OTHER_PERIOD" if is_full else "RECLASS_PARTIAL"
-		for name in members:
-			if name in line_entries:
-				flags.setdefault(name, [code])
-
-	remaining = []
-	removed_groups = {}
-	for line in lines:
-		partners = None
-		if line.voucher_type == "Journal Entry":
-			partners = removed.get((line.voucher_no, line.vat_account))
-		if partners is None:
-			remaining.append(line)
-		else:
-			removed_groups.setdefault((line.voucher_no, line.vat_account), (partners, []))[1].append(line)
-
-	pair_rows = []
-	for partners, group in removed_groups.values():
-		row = get_exception_row(
-			group, get_side(group[0], accounts), STATUS_RECLASSIFIED, ["VAT_RECLASSIFIED"]
-		)
-		row.reclass_pair = ", ".join(partners)
-		pair_rows.append(row)
-	return remaining, pair_rows, flags
-
-
-def get_entry_vat(voucher_nos, accounts):
-	"""(voucher_no, VAT account) -> VAT of the Journal Entry on that account over all dates, with the sign of
-	get_gl_lines (output: credit - debit, input: debit - credit)."""
-	vat_accounts = [a for a, t in accounts.items() if t in ("Output VAT", "Input VAT")]
-	if not voucher_nos or not vat_accounts:
-		return {}
-	rows = frappe.db.sql(
-		"""
-		select voucher_no, account, sum(debit) as debit, sum(credit) as credit
-		from `tabGL Entry`
-		where voucher_type = 'Journal Entry'
-			and is_cancelled = 0
-			and voucher_no in %(voucher_nos)s
-			and account in %(vat_accounts)s
-		group by voucher_no, account
-		""",
-		{"voucher_nos": sorted(voucher_nos), "vat_accounts": vat_accounts},
-		as_dict=True,
-	)
-	totals = {}
-	for row in rows:
-		is_output = accounts[row.account] == "Output VAT"
-		totals[(row.voucher_no, row.account)] = flt(
-			row.credit - row.debit if is_output else row.debit - row.credit, 2
-		)
-	return totals

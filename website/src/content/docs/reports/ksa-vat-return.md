@@ -59,35 +59,38 @@ Both are listed in the report **VAT Documents Requiring Completion** with the st
 
 ## Data rules
 
-Every voucher behind the return is checked for the data a VAT return needs. Vouchers that need attention are listed
-in **VAT Documents Requiring Completion**, one row per voucher, with the failed rules in English and Arabic.
+The return is built from invoices. The rules start on the date set in
+[KSA VAT Settings](/reports/getting-started/configuration/) (**Output VAT from Sales Invoices only, from date**). When
+the date is empty the rules apply to every date. Lines before the date are never left out; missing data is only
+listed with the status **Included (warning)**.
 
-**Purchases.** A purchase voucher that fails any rule is left out of the return and of the detail report (status
-**Excluded**). Input VAT is deducted only with a valid tax invoice in hand; when the missing data is completed, the
-voucher is counted again. The rules:
+Vouchers that need attention are listed in **VAT Documents Requiring Completion**, one row per voucher, with the failed
+rules in English and Arabic.
 
-- The supplier invoice number is present and is not used on another voucher of the same supplier (only for voucher
-  types that have such a field).
-- The supplier name is present.
-- The supplier VAT number is valid: 15 digits, starting and ending with 3.
-- The check **Buyer details verified on supplier invoice** is ticked (Purchase Invoice and Journal Entry): the
-  supplier invoice shows the full name, VAT number and address of the company.
-- A file is attached to the voucher (for example a copy of the supplier invoice).
+**Sales (from the date on).** Output VAT is counted only from Sales Invoices, including credit and debit notes. Any
+other voucher with output VAT, for example a Journal Entry, is left out of the return and the detail and listed with
+the status **Excluded** and the code `OUTPUT_VAT_BY_JOURNAL_ENTRY`. A Sales Invoice is never left out: missing customer
+name, VAT number or other ID is only reported, with the status **Included (warning)**.
 
-A voucher that **reduces** input VAT is never left out, because leaving it out would increase the VAT claim. It
-stays in the return with the status **Included (warning)** and the code `REDUCTION_KEPT`. Complete its data.
+**Purchases (from the date on).** Input VAT is counted only from Purchase Invoices and Journal Entries; any other
+voucher is left out (`INPUT_VAT_SOURCE_NOT_ALLOWED`). A voucher that fails any of these rules is left out of the return
+and of the detail report and listed with the status **Excluded**:
 
-**Sales.** A sale is never left out: VAT is due on every taxable sale. Missing customer name, VAT number or other ID
-is only reported, with the status **Included (warning)**.
+- **a.** A supplier is set and has a name (`SUPPLIER_MISSING`).
+- **b.** The supplier invoice number is present and not used on another voucher of the same supplier
+  (`BILL_NO_MISSING`, `BILL_NO_DUPLICATE`).
+- **c.** The supplier VAT number is valid: 15 digits, starting and ending with 3 (`SUPPLIER_VAT_INVALID`).
+- **d.** The check **Buyer details verified on supplier invoice** is ticked: the supplier invoice shows the full name,
+  VAT number and address of the company (`BUYER_DETAILS_NOT_VERIFIED`).
 
-**Statuses.** Excluded, Included (warning), Not reported, Reclassified.
+A missing attachment (`ATTACHMENT_MISSING`) is only a warning: the voucher is counted and listed as
+**Included (warning)**. A voucher that reduces input VAT follows the same rules. When it is excluded it also gets
+`REDUCTION_EXCLUDED`, because excluding it increases the VAT claim. Complete its data so it is counted again.
 
-**Reclassification pairs.** A Journal Entry that reverses the VAT of an earlier Journal Entry names it in the field
-**Reclassification Of**. When the VAT reverses fully on every VAT account, and the original and all its
-reclassification entries are inside the report period, both leave the Amount and Adjustment columns and the detail,
-and are listed with the status **Reclassified**. In all other cases (partial reversal, entries in another period,
-chains) nothing is removed and the entries are flagged `RECLASS_PARTIAL` or `RECLASS_OTHER_PERIOD` for review. The
-Adjustment column then holds only credit notes, debit notes, returns and genuine reductions.
+**Statuses.** Excluded, Included (warning), Not reported.
+
+**Adjustment column.** It holds credit notes, debit notes, purchase returns and purchase Journal Entries that reduce
+input VAT.
 
 ## Open the transactions behind an amount
 
