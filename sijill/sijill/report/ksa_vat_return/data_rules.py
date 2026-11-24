@@ -142,6 +142,10 @@ INPUT_VAT_SOURCES = ("Purchase Invoice", "Journal Entry")
 BILL_FIELDS = {"Purchase Invoice": "bill_no", "Journal Entry": "bill_no", "Payment Entry": "reference_no"}
 
 
+# only zeros, punctuation or underscores ("00", "_", "-.-"): no invoice number at all
+NO_NUMBER = re.compile(r"^[0\W_]*$")
+
+
 def normalise_bill_no(value):
 	"""A supplier invoice number without case and without any whitespace, for comparisons."""
 	return re.sub(r"\s+", "", value or "").casefold()
@@ -150,7 +154,12 @@ def normalise_bill_no(value):
 def is_bill_no_missing(bill_no, voucher_no):
 	"""Empty, a placeholder (BILL_NO_PLACEHOLDERS) or the system voucher number."""
 	value = normalise_bill_no(bill_no)
-	return not value or value in BILL_NO_PLACEHOLDERS or value == normalise_bill_no(voucher_no)
+	return (
+		not value
+		or value in BILL_NO_PLACEHOLDERS
+		or NO_NUMBER.match(value) is not None
+		or value == normalise_bill_no(voucher_no)
+	)
 
 
 def get_rule_result(filters):
@@ -324,14 +333,17 @@ class PurchaseFacts:
 			for doc in self.docs.get("Purchase Invoice", {}).values()
 			if doc.get("is_return") and doc.get("return_against")
 		}
-		self.against = get_records(
+		# only submitted originals lend their facts to a return (a cancelled original lends nothing)
+		originals = get_records(
 			"Purchase Invoice",
 			against,
 			[
+				"docstatus",
 				"bill_no",
 				*([BUYER_FIELD] if frappe.get_meta("Purchase Invoice").has_field(BUYER_FIELD) else []),
 			],
 		)
+		self.against = {name: row for name, row in originals.items() if row.docstatus == 1}
 		self.suppliers = get_records("Supplier", suppliers, ["supplier_name", "tax_id"])
 		self.bill_keys = self.load_bill_keys(company, accounts, suppliers)
 		self.attached = {
@@ -429,8 +441,11 @@ class PurchaseFacts:
 		bill_field = BILL_FIELDS.get(voucher_type)
 		bill_no = (doc.get(bill_field) or "").strip() if bill_field else ""
 		if is_return and is_bill_no_missing(bill_no, voucher_no):
-			# a return normally carries the number of the original invoice
-			bill_no = (against.get("bill_no") or "").strip() or bill_no
+			# a return normally carries the number of the original invoice; the inherited number must not be the
+			# original's own voucher number either
+			inherited = (against.get("bill_no") or "").strip()
+			if inherited and not is_bill_no_missing(inherited, doc.get("return_against")):
+				bill_no = inherited
 		if voucher_type == "Purchase Invoice":
 			supplier_name = (doc.get("supplier_name") or "").strip()
 		else:
@@ -443,7 +458,14 @@ class PurchaseFacts:
 			pass
 		elif is_bill_no_missing(bill_no, voucher_no):
 			failed.add("BILL_NO_MISSING")
-		elif supplier and not is_return:
+		elif (
+			supplier
+			and not is_return
+			and not (
+				voucher_type == "Journal Entry" and flt(sum(flt(line.vat_amount) for line in group), 2) <= 0
+			)
+		):
+			# a Journal Entry that does not debit input VAT (a reversal or correction) is never a copy (load_bill_keys)
 			holders = self.bill_keys.get((supplier, normalise_bill_no(bill_no)), set()) | {
 				(voucher_type, voucher_no)
 			}

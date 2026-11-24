@@ -184,6 +184,28 @@ class TestVATPurchaseRules(VATRulesTestBase):
 		line = next(line for line in self.detail() if line["voucher_no"] == ret.name)
 		self.assertEqual(line["bill_no"], "K-RET-4")
 
+	def test_return_does_not_inherit_a_bill_no_equal_to_the_name_of_the_original(self):
+		pi = make_purchase_invoice(rate=500, bill_no="K-RET-5")
+		frappe.db.set_value("Purchase Invoice", pi.name, "bill_no", pi.name)
+		ret = make_purchase_return(pi, keep_bill_no=False)
+		row = self.exceptions()[ret.name]
+		self.assertEqual(row["status"], "Excluded")
+		self.assertIn("BILL_NO_MISSING", self.codes(row))
+
+	def test_return_of_a_cancelled_original_inherits_nothing(self):
+		pi = make_purchase_invoice(rate=500, bill_no="K-RET-6")
+		ret = make_purchase_return(pi, verified=False, keep_bill_no=False)
+		try:
+			pi.reload()
+			pi.cancel()
+		except frappe.ValidationError:
+			# ERPNext does not cancel an invoice that has a submitted return: set the state directly
+			frappe.db.set_value("Purchase Invoice", pi.name, "docstatus", 2)
+		row = self.exceptions()[ret.name]
+		self.assertEqual(row["status"], "Excluded")
+		self.assertIn("BILL_NO_MISSING", self.codes(row))
+		self.assertIn("BUYER_DETAILS_NOT_VERIFIED", self.codes(row))
+
 	def test_bill_no_duplicate_ignores_case_and_inner_spaces(self):
 		first = make_purchase_invoice(rate=500, bill_no="INV 55")
 		second = make_purchase_invoice(rate=200, bill_no="inv55")
@@ -195,7 +217,7 @@ class TestVATPurchaseRules(VATRulesTestBase):
 
 	def test_placeholder_bill_numbers_are_missing(self):
 		for index, value in enumerate(
-			("0", "-", "--", ".", "N/A", "NA", "none", "لا يوجد", "بدون", "", "   ")
+			("0", "00", "-", "--", "-.-", ".", "_", "N/A", "NA", "none", "لا يوجد", "بدون", "", "   ")
 		):
 			with self.subTest(value=value):
 				pi = make_purchase_invoice(rate=100, bill_no=value)
@@ -443,7 +465,7 @@ class TestVATSalesRules(VATRulesTestBase):
 			(rows[original.name]["status"], rows[original.name]["failed_codes"]),
 			("Excluded", "OUTPUT_VAT_BY_JOURNAL_ENTRY"),
 		)
-		# a reversal reduces output VAT: excluding it lowers the VAT due, so it is flagged
+		# a reversal reduces output VAT: excluding it raises the VAT due, so it is flagged
 		self.assertEqual(
 			(rows[reversal.name]["status"], self.codes(rows[reversal.name])),
 			("Excluded", ["OUTPUT_VAT_BY_JOURNAL_ENTRY", "OUTPUT_REDUCTION_EXCLUDED"]),
