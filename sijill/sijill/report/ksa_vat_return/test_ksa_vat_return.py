@@ -343,8 +343,6 @@ class TestKSAVATReturn(ERPNextTestSuite):
 		Cr Input VAT) instead of cancelling the original entry. The return nets both to zero VAT."""
 		make_vat_journal_entry(net=100)
 		reclass(OUTPUT_VAT, f"Sales - {ABBR}", 15, debit_vat=True)
-		make_bank_vat_journal_entry(30)
-		reclass(INPUT_VAT, f"Cost of Goods Sold - {ABBR}", 30)
 		original = make_purchase_journal_entry(vat=30, bill_no="JE-BILL-RC")
 		reclass(INPUT_VAT, f"Cost of Goods Sold - {ABBR}", 30, link=original.name)
 

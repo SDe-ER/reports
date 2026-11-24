@@ -55,6 +55,29 @@ COGS = f"Cost of Goods Sold - {ABBR}"
 SALES = f"Sales - {ABBR}"
 
 
+def make_second_output_account():
+	"""A second Output VAT account of the test company, added to the KSA VAT Settings."""
+	name = f"Output VAT 5% - {ABBR}"
+	if not frappe.db.exists("Account", name):
+		parent = frappe.db.get_value("Account", OUTPUT_VAT, "parent_account")
+		frappe.get_doc(
+			{
+				"doctype": "Account",
+				"account_name": "Output VAT 5%",
+				"parent_account": parent,
+				"company": COMPANY,
+				"account_type": "Tax",
+				"tax_rate": 5,
+			}
+		).insert()
+	settings = frappe.get_doc("KSA VAT Settings", COMPANY)
+	if not any(row.account == name for row in settings.ksa_vat_accounts):
+		settings.append("ksa_vat_accounts", {"account": name, "vat_account_type": "Output VAT"})
+		settings.save()
+	frappe.clear_cache()
+	return name
+
+
 class VATRulesTestBase(ERPNextTestSuite):
 	def setUp(self):
 		make_company()
@@ -69,8 +92,8 @@ class VATRulesTestBase(ERPNextTestSuite):
 		date = date or nowdate()
 		return {"company": COMPANY, "from_date": date, "to_date": date, **extra}
 
-	def boxes(self, date=None):
-		_columns, data = execute(self.filters(date))
+	def boxes(self, date=None, **extra):
+		_columns, data = execute(self.filters(date, **extra))
 		return {row["no"]: row for row in data if row["no"]}
 
 	def detail(self, date=None, **extra):
@@ -206,15 +229,27 @@ class TestVATDataRules(VATRulesTestBase):
 		self.assertEqual(self.boxes()["7"]["amount"], 500)
 		self.assertEqual(self.exceptions(), {})
 
-	def test_excluded_reduction_is_flagged(self):
-		"""Excluding a voucher that reduces input VAT increases the claim: it also gets REDUCTION_EXCLUDED."""
+	def test_reduction_is_never_excluded(self):
+		"""A voucher that reduces input VAT stays in the return even when it fails rules: excluding it would
+		increase the VAT claim. It is listed as a warning with its failed codes and REDUCTION_KEPT."""
+		make_purchase_invoice(rate=500, bill_no="K-RED-0")
 		je = reclass(INPUT_VAT, COGS, 30)
 		row = self.exceptions()[je.name]
-		self.assertEqual(row["status"], "Excluded")
-		self.assertIn("REDUCTION_EXCLUDED", self.codes(row))
+		self.assertEqual(row["status"], "Included (warning)")
 		self.assertIn("BILL_NO_MISSING", self.codes(row))
+		self.assertEqual(self.codes(row)[-1], "REDUCTION_KEPT")
+		self.assertNotIn("REDUCTION_EXCLUDED", row["failed_codes"])
 		self.assertEqual(row["vat_amount"], -30)
-		self.assertEqual(self.boxes()["7"]["vat_amount"], 0)
+		self.assertEqual(self.boxes()["7"]["vat_amount"], 45)
+		line = next(line for line in self.detail() if line["voucher_no"] == je.name)
+		for field in ("voucher_no", "bill_no", "party_name", "tax_id"):
+			self.assertTrue(line[field], field)
+		self.assertEqual(line["tax_id"], get_marker())
+
+	def test_reduction_that_passes_the_rules_has_no_warning(self):
+		pi = make_purchase_invoice(rate=500, bill_no="K-RED-1")
+		make_purchase_return(pi)
+		self.assertEqual(self.exceptions(), {})
 
 	# Journal Entries with input VAT
 
@@ -456,23 +491,34 @@ class TestVATReclassificationPairs(VATRulesTestBase):
 		self.assertEqual({row["side"] for row in rows.values()}, {"Sales"})
 
 	def test_output_pair_in_different_periods(self):
+		"""Each period queried alone keeps its member; a range covering both removes the pair."""
 		earlier = add_months(nowdate(), -1)
 		original = make_vat_journal_entry(net=100, posting_date=earlier)
 		pair = reclass(OUTPUT_VAT, SALES, 15, debit_vat=True, link=original.name)
 
-		for date, voucher, partner in ((earlier, original, pair), (nowdate(), pair, original)):
-			boxes = self.boxes(date)
-			self.assertEqual(
-				(boxes["1"]["amount"], boxes["1"]["adjustment"], boxes["1"]["vat_amount"]), (0, 0, 0), date
-			)
-			self.assertEqual(self.detail(date), [], date)
-			rows = self.exceptions(date)
-			self.assertEqual(list(rows), [voucher.name], date)
-			self.assertEqual(
-				(rows[voucher.name]["status"], rows[voucher.name]["failed_codes"]),
-				("Reclassified", "VAT_RECLASSIFIED"),
-			)
-			self.assertEqual(rows[voucher.name]["reclass_pair"], partner.name)
+		boxes = self.boxes(earlier)
+		self.assertEqual(
+			(boxes["1"]["amount"], boxes["1"]["adjustment"], boxes["1"]["vat_amount"]), (100, 0, 15)
+		)
+		row = self.exceptions(earlier)[original.name]
+		self.assertEqual((row["status"], row["failed_codes"]), ("Included (warning)", "RECLASS_OTHER_PERIOD"))
+		self.assertEqual(self.detail_vouchers(earlier), {original.name})
+
+		boxes = self.boxes()
+		self.assertEqual(
+			(boxes["1"]["amount"], boxes["1"]["adjustment"], boxes["1"]["vat_amount"]), (0, -100, -15)
+		)
+		row = self.exceptions()[pair.name]
+		self.assertEqual(row["status"], "Included (warning)")
+		self.assertIn("RECLASS_OTHER_PERIOD", self.codes(row))
+		self.assertEqual(self.detail_vouchers(), {pair.name})
+
+		boxes = self.boxes(from_date=earlier)
+		self.assertEqual(
+			(boxes["1"]["amount"], boxes["1"]["adjustment"], boxes["1"]["vat_amount"]), (0, 0, 0)
+		)
+		self.assertEqual(self.detail(from_date=earlier), [])
+		self.assert_pair(self.exceptions(from_date=earlier), original, pair)
 
 	def test_input_pair_leaves_amount_adjustment_and_detail(self):
 		original = make_purchase_journal_entry(vat=30, bill_no="L-IN-1")
@@ -493,11 +539,21 @@ class TestVATReclassificationPairs(VATRulesTestBase):
 		original = make_purchase_journal_entry(vat=30, bill_no="L-IN-2", posting_date=earlier)
 		pair = reclass(INPUT_VAT, COGS, 30, link=original.name)
 
-		self.assertEqual(self.boxes(earlier)["7"]["vat_amount"], 0)
-		self.assertEqual(self.boxes()["7"]["vat_amount"], 0)
-		self.assertEqual(self.detail(earlier) + self.detail(), [])
-		self.assertEqual(self.exceptions(earlier)[original.name]["reclass_pair"], pair.name)
-		self.assertEqual(self.exceptions()[pair.name]["reclass_pair"], original.name)
+		self.assertEqual(self.boxes(earlier)["7"]["vat_amount"], 30)
+		self.assertEqual(self.exceptions(earlier)[original.name]["failed_codes"], "RECLASS_OTHER_PERIOD")
+		# the reclassification reduces input VAT: kept although it fails the data rules
+		self.assertEqual(self.boxes()["7"]["vat_amount"], -30)
+		row = self.exceptions()[pair.name]
+		self.assertEqual(row["status"], "Included (warning)")
+		self.assertIn("RECLASS_OTHER_PERIOD", self.codes(row))
+		self.assertIn("REDUCTION_KEPT", self.codes(row))
+
+		boxes = self.boxes(from_date=earlier)
+		self.assertEqual(
+			(boxes["7"]["amount"], boxes["7"]["adjustment"], boxes["7"]["vat_amount"]), (0, 0, 0)
+		)
+		self.assertEqual(self.detail(from_date=earlier), [])
+		self.assert_pair(self.exceptions(from_date=earlier), original, pair)
 
 	def test_pair_of_an_incomplete_original_is_reclassified_not_excluded(self):
 		"""Pair lines do not go through the data rules."""
@@ -536,18 +592,56 @@ class TestVATReclassificationPairs(VATRulesTestBase):
 			self.assertIn("RECLASS_PARTIAL", self.codes(rows[voucher.name]))
 			self.assertFalse(rows[voucher.name]["reclass_pair"])
 
-	def test_partial_input_reclassification_is_flagged_and_checked_by_the_rules(self):
+	def test_partial_input_reclassification_keeps_the_reduction(self):
 		original = make_purchase_journal_entry(vat=30, bill_no="L-PART-1")
 		partial = reclass(INPUT_VAT, COGS, 10, link=original.name)
 
 		rows = self.exceptions()
-		self.assertIn(original.name, self.detail_vouchers())
+		self.assertEqual(self.detail_vouchers(), {original.name, partial.name})
 		self.assertEqual(rows[original.name]["failed_codes"], "RECLASS_PARTIAL")
 		self.assertEqual(rows[original.name]["status"], "Included (warning)")
-		self.assertEqual(rows[partial.name]["status"], "Excluded")
+		self.assertEqual(rows[partial.name]["status"], "Included (warning)")
 		self.assertIn("RECLASS_PARTIAL", self.codes(rows[partial.name]))
-		self.assertIn("REDUCTION_EXCLUDED", self.codes(rows[partial.name]))
-		self.assertEqual(self.boxes()["7"]["vat_amount"], 30)
+		self.assertIn("REDUCTION_KEPT", self.codes(rows[partial.name]))
+		self.assertEqual(self.boxes()["7"]["vat_amount"], 20)
+
+	def test_reclassification_to_another_vat_account_is_not_removed(self):
+		second = make_second_output_account()
+		original = make_vat_journal_entry(net=100)
+		before = self.boxes()["1"]["vat_amount"]
+		move = frappe.get_doc(
+			{
+				"doctype": "Journal Entry",
+				"company": COMPANY,
+				"posting_date": nowdate(),
+				RECLASS_FIELD: original.name,
+				"accounts": [
+					{"account": OUTPUT_VAT, "debit_in_account_currency": 15, "cost_center": f"Main - {ABBR}"},
+					{"account": second, "credit_in_account_currency": 15, "cost_center": f"Main - {ABBR}"},
+				],
+			}
+		)
+		move.insert()
+		move.submit()
+
+		self.assertEqual(before, 15)
+		self.assertEqual(self.boxes()["1"]["vat_amount"], 15)
+		rows = self.exceptions(show_not_reported=1)
+		self.assertNotIn("Reclassified", {row["status"] for row in rows.values()})
+		self.assertIn("RECLASS_PARTIAL", self.codes(rows[original.name]))
+		self.assertIn("RECLASS_PARTIAL", self.codes(rows[move.name]))
+
+	def test_chain_of_reclassifications_is_not_removed(self):
+		first = make_vat_journal_entry(net=100)
+		second = reclass(OUTPUT_VAT, SALES, 15, debit_vat=True, link=first.name)
+		third = reclass(OUTPUT_VAT, SALES, 15, link=second.name)
+
+		self.assertEqual(self.boxes()["1"]["vat_amount"], 15)
+		rows = self.exceptions()
+		self.assertNotIn("Reclassified", {row["status"] for row in rows.values()})
+		for voucher in (first, second, third):
+			self.assertIn("RECLASS_PARTIAL", self.codes(rows[voucher.name]), voucher.name)
+		self.assertEqual(self.detail_vouchers(), {first.name, second.name, third.name})
 
 	def test_cancelled_reclassification_is_not_a_pair(self):
 		original = make_vat_journal_entry(net=100)
