@@ -18,7 +18,10 @@ It uses the same calculation as the return, so its totals always match.
 | Rate (%) | For example 15. |
 | Party Type, Party | One customer or supplier. |
 | Voucher Type | Sales Invoice, Purchase Invoice, Journal Entry, Payment Entry. |
-| Show Excluded Entries | Adds opening entries and entries between VAT accounts, greyed, with the reason in Remarks. |
+
+The report lists only the vouchers counted in the return. Invoice No, Party Name and Tax ID are never empty;
+a sales line with missing customer data shows a "Missing" marker, and the voucher is listed in
+VAT Documents Requiring Completion.
 
 ## Columns
 
@@ -33,7 +36,6 @@ It uses the same calculation as the return, so its totals always match.
 | Adjustment | Ticked for credit notes, debit notes and returns. |
 | Taxable Amount, VAT Amount, Total Including VAT | In company currency. |
 | VAT Account | The VAT account the amount was posted to. |
-| Remarks | Why an excluded line is not reported. |
 
 The last row totals the amount columns.
 
@@ -48,4 +50,6 @@ and the total.
 2. Click the VAT amount of field 7 (purchases).
 3. Sort by **Invoice No** and **Tax ID**: lines without a supplier invoice number or tax ID need review before their
    input VAT is claimed.
-4. Tick **Show Excluded Entries** to see the settlement and reclassification entries of the period.
+4. Click **VAT Documents Requiring Completion** (top right) to see the vouchers that are left out of the return or
+   need attention, and tick **Include settlement and opening entries** there to see the entries that are not
+   reported. See [data rules](/reports/reports/ksa-vat-return/#data-rules).

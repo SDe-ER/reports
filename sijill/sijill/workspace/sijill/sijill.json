@@ -1,7 +1,7 @@
 {
  "app": "sijill",
  "charts": [],
- "content": "[{\"id\":\"sjl-h-vat\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Saudi VAT</b></span>\",\"col\":12}},{\"id\":\"sjl-s-return\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"KSA VAT Return\",\"col\":4}},{\"id\":\"sjl-s-detail\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"KSA VAT Return Detail\",\"col\":4}},{\"id\":\"sjl-s-settings\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"KSA VAT Settings\",\"col\":4}},{\"id\":\"sjl-sp\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"sjl-c-vat\",\"type\":\"card\",\"data\":{\"card_name\":\"Saudi VAT\",\"col\":4}}]",
+ "content": "[{\"id\":\"sjl-h-vat\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Saudi VAT</b></span>\",\"col\":12}},{\"id\":\"sjl-s-return\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"KSA VAT Return\",\"col\":4}},{\"id\":\"sjl-s-detail\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"KSA VAT Return Detail\",\"col\":4}},{\"id\":\"sjl-s-complete\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"VAT Documents Requiring Completion\",\"col\":4}},{\"id\":\"sjl-s-settings\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"KSA VAT Settings\",\"col\":4}},{\"id\":\"sjl-sp\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"sjl-c-vat\",\"type\":\"card\",\"data\":{\"card_name\":\"Saudi VAT\",\"col\":4}}]",
  "creation": "2026-11-23 16:00:00.000000",
  "custom_blocks": [],
  "docstatus": 0,
@@ -17,7 +17,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "Saudi VAT",
-   "link_count": 3,
+   "link_count": 4,
    "onboard": 0,
    "type": "Card Break"
   },
@@ -37,6 +37,16 @@
    "label": "KSA VAT Return Detail",
    "link_count": 0,
    "link_to": "KSA VAT Return Detail",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "VAT Documents Requiring Completion",
+   "link_count": 0,
+   "link_to": "VAT Documents Requiring Completion",
    "link_type": "Report",
    "onboard": 0,
    "type": "Link"
@@ -81,6 +91,13 @@
    "doc_view": "",
    "label": "KSA VAT Return Detail",
    "link_to": "KSA VAT Return Detail",
+   "type": "Report"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "",
+   "label": "VAT Documents Requiring Completion",
+   "link_to": "VAT Documents Requiring Completion",
    "type": "Report"
   },
   {

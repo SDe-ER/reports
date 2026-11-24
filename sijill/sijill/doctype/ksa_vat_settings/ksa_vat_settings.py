@@ -5,6 +5,7 @@ import frappe
 from erpnext import get_region
 from frappe import _
 from frappe.model.document import Document
+from frappe.utils import getdate
 
 
 class KSAVATSettings(Document):
@@ -20,6 +21,7 @@ class KSAVATSettings(Document):
 
 		company: DF.Link
 		ksa_vat_accounts: DF.Table[KSAVATAccount]
+		output_vat_invoices_only_from: DF.Date | None
 	# end: auto-generated types
 
 	def validate(self):
@@ -62,3 +64,10 @@ def get_ksa_vat_accounts(company):
 			as_list=True,
 		)
 	)
+
+
+def get_rules_from_date(company):
+	"""The date from which the KSA VAT Return applies the data rules (output VAT from Sales Invoices only,
+	purchase VAT from complete Purchase Invoices and Journal Entries). None: the rules are off."""
+	value = frappe.db.get_value("KSA VAT Settings", company, "output_vat_invoices_only_from")
+	return getdate(value) if value else None

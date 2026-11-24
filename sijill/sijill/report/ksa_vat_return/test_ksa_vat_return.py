@@ -4,7 +4,7 @@
 import frappe
 from erpnext.controllers.sales_and_purchase_return import make_return_doc
 from erpnext.tests.utils import ERPNextTestSuite
-from frappe.utils import nowdate
+from frappe.utils import add_days, flt, nowdate
 
 from sijill.sijill.report.ksa_vat_return.ksa_vat_return import (
 	EXCLUDED,
@@ -17,6 +17,9 @@ from sijill.sijill.report.ksa_vat_return.ksa_vat_return import (
 )
 from sijill.sijill.report.ksa_vat_return_detail.ksa_vat_return_detail import (
 	execute as execute_detail,
+)
+from sijill.sijill.report.vat_documents_requiring_completion.vat_documents_requiring_completion import (
+	execute as execute_exceptions,
 )
 
 COMPANY = "_Test KSA VAT Company"
@@ -45,6 +48,10 @@ class TestKSAVATReturn(ERPNextTestSuite):
 		_columns, data = execute(self.filters())
 		return {row["no"]: row for row in data if row["no"]}, data
 
+	def exceptions(self, **extra):
+		_columns, rows = execute_exceptions(self.filters(**extra))
+		return {row["voucher_no"]: row for row in rows}
+
 	def test_company_outside_saudi_arabia_is_rejected(self):
 		self.assertRaises(
 			frappe.ValidationError,
@@ -71,6 +78,7 @@ class TestKSAVATReturn(ERPNextTestSuite):
 		make_sales_invoice(rate=300, vat_rate=0)
 		make_sales_invoice(rate=400, vat_rate=0, customer=EXPORT_CUSTOMER)
 		make_purchase_invoice(rate=500, bill_no="SUP-0001")
+		set_cutoff(add_days(nowdate(), 30))
 		make_vat_journal_entry(net=100)
 		make_settlement_journal_entry()
 
@@ -98,6 +106,7 @@ class TestKSAVATReturn(ERPNextTestSuite):
 		credit_note.submit()
 		make_sales_invoice(rate=400, vat_rate=0, customer=EXPORT_CUSTOMER)
 		make_purchase_invoice(rate=500, bill_no="SUP-0002")
+		set_cutoff(add_days(nowdate(), 30))
 		make_vat_journal_entry(net=100)
 
 		boxes, _data = self.summary()
@@ -138,10 +147,15 @@ class TestKSAVATReturn(ERPNextTestSuite):
 		_columns, lines = execute_detail(self.filters())
 		self.assertNotIn(EXCLUDED, {line["category"] for line in lines})
 
-		_columns, lines = execute_detail(self.filters(show_excluded=1))
-		excluded = [line for line in lines if line["category"] == EXCLUDED]
-		self.assertEqual({line["vat_account"] for line in excluded}, {OUTPUT_VAT, INPUT_VAT})
-		self.assertTrue(all(line["remarks"] for line in excluded))
+		# the settlement entry is not part of the detail; the exceptions report lists it only on request
+		self.assertEqual(
+			[row for row in self.exceptions().values() if row["voucher_type"] == "Journal Entry"], []
+		)
+		_columns, rows = execute_exceptions(self.filters(show_not_reported=1))
+		settlement = [row for row in rows if row["voucher_type"] == "Journal Entry"]
+		self.assertEqual({row["side"] for row in settlement}, {"Sales", "Purchase"})
+		self.assertEqual({row["status"] for row in settlement}, {"Not reported"})
+		self.assertEqual({row["failed_codes"] for row in settlement}, {"NOT_A_TAXABLE_TRANSACTION"})
 
 	def test_vat_payment_through_a_vat_account_is_not_reported(self):
 		"""Paying the authority straight from an Output VAT account is a settlement, not a sale."""
@@ -172,11 +186,18 @@ class TestKSAVATReturn(ERPNextTestSuite):
 		boxes, _data = self.summary()
 		self.assertEqual((boxes["1"]["adjustment"], boxes["1"]["vat_amount"]), (0, 150))
 
-		_columns, lines = execute_detail(self.filters(show_excluded=1, voucher_type="Journal Entry"))
-		self.assertEqual([(line["category"], line["vat_amount"]) for line in lines], [(EXCLUDED, -150)])
+		_columns, lines = execute_detail(self.filters(voucher_type="Journal Entry"))
+		self.assertEqual(lines, [])
+		_columns, rows = execute_exceptions(self.filters(show_not_reported=1))
+		self.assertEqual(
+			[(row["status"], row["vat_amount"]) for row in rows if row["voucher_type"] == "Journal Entry"],
+			[("Not reported", -150)],
+		)
 
-	def test_vat_charged_by_the_bank_is_reported(self):
-		"""Input VAT a bank charges on its fees (Dr Input VAT, Cr Bank) is a purchase, not a settlement."""
+	def test_vat_charged_by_the_bank_is_excluded(self):
+		"""Input VAT a bank charges on its fees (Dr Input VAT, Cr Bank) is a purchase, not a settlement. It has
+		no supplier and no invoice data, so the data rules leave it out and the exceptions report lists it."""
+		set_cutoff(add_days(nowdate(), -400))
 		bank = frappe.db.get_value(
 			"Account", {"company": COMPANY, "account_type": ("in", ["Bank", "Cash"]), "is_group": 0}, "name"
 		)
@@ -195,7 +216,19 @@ class TestKSAVATReturn(ERPNextTestSuite):
 		je.submit()
 
 		boxes, _data = self.summary()
-		self.assertEqual((boxes["7"]["amount"], boxes["7"]["vat_amount"]), (200, 30))
+		self.assertEqual((boxes["7"]["amount"], boxes["7"]["vat_amount"]), (0, 0))
+		row = self.exceptions()[je.name]
+		self.assertEqual((row["side"], row["status"], row["vat_amount"]), ("Purchase", "Excluded", 30))
+		self.assertEqual(
+			row["failed_codes"].split("; "),
+			[
+				"BILL_NO_MISSING",
+				"SUPPLIER_MISSING",
+				"SUPPLIER_VAT_INVALID",
+				"BUYER_DETAILS_NOT_VERIFIED",
+				"ATTACHMENT_MISSING",
+			],
+		)
 
 	def test_actual_vat_row_is_standard_rated(self):
 		"""A VAT row of charge type "Actual" stores rate 0 in Item Wise Tax Detail; the line still carries VAT
@@ -254,16 +287,21 @@ class TestKSAVATReturn(ERPNextTestSuite):
 		self.assertEqual((boxes["7"]["amount"], boxes["7"]["vat_amount"]), (0, 0))
 
 	def test_bank_name_on_entries_without_a_party(self):
+		set_cutoff(add_days(nowdate(), -400))
 		bank = make_bank_vat_journal_entry(30)
 
+		# an entry without a supplier is left out of the detail; the exceptions report names the bank
 		_columns, lines = execute_detail(self.filters(voucher_type="Journal Entry"))
-		self.assertEqual(len(lines), 1)
-		self.assertEqual(lines[0]["party_name"], frappe.db.get_value("Account", bank, "account_name"))
-		self.assertFalse(lines[0]["party"])
-		self.assertFalse(lines[0].get("tax_id"))
+		self.assertEqual(lines, [])
+		rows = list(self.exceptions().values())
+		self.assertEqual(len(rows), 1)
+		self.assertEqual(rows[0]["party_name"], frappe.db.get_value("Account", bank, "account_name"))
+		self.assertFalse(rows[0]["party"])
+		self.assertFalse(rows[0]["tax_id"])
 
 	def test_bank_name_from_the_bank_account(self):
 		"""A row linked to a Bank Account shows the Bank's name, not Bank Account.account_name (the holder)."""
+		set_cutoff(add_days(nowdate(), -400))
 		bank_ledger = make_bank_ledger("_Test KSA Bank Ledger")
 		if not frappe.db.exists("Bank", "_Test KSA Bank"):
 			frappe.get_doc({"doctype": "Bank", "bank_name": "_Test KSA Bank"}).insert()
@@ -300,29 +338,35 @@ class TestKSAVATReturn(ERPNextTestSuite):
 		je.insert()
 		je.submit()
 
-		_columns, lines = execute_detail(self.filters(voucher_type="Journal Entry"))
 		self.assertEqual(
-			[(line["voucher_no"], line["party_name"]) for line in lines], [(je.name, "_Test KSA Bank")]
+			[(row["voucher_no"], row["party_name"]) for row in self.exceptions().values()],
+			[(je.name, "_Test KSA Bank")],
 		)
 
-	def test_reclassification_entries_net_out(self):
-		"""Owner 2026-11-23: VAT removed by a reclassification JE (Dr Output VAT / Cr Sales; Dr Bank Charges /
-		Cr Input VAT) instead of cancelling the original entry. The return nets both to zero VAT."""
+	def test_reclassification_entries_are_left_out(self):
+		"""A Journal Entry with output VAT and the entry that reverses it (no supplier or customer) both leave
+		the return; so do a bank VAT entry and the unlinked entry that reverses it (Dr expense / Cr Input VAT)."""
+		set_cutoff(add_days(nowdate(), -400))
+		si = make_sales_invoice(rate=1000)
+		before, _data = self.summary()
 		make_vat_journal_entry(net=100)
 		reclass(OUTPUT_VAT, f"Sales - {ABBR}", 15, debit_vat=True)
 		make_bank_vat_journal_entry(30)
 		reclass(INPUT_VAT, f"Cost of Goods Sold - {ABBR}", 30)
 
 		boxes, _data = self.summary()
-		self.assertEqual(boxes["1"]["vat_amount"], 0)
-		self.assertEqual(boxes["1"]["amount"] + boxes["1"]["adjustment"], 0)
+		for no in ("1", "6", "7", "12", "13"):
+			self.assertEqual(boxes[no], before[no], no)
 		self.assertEqual(boxes["7"]["vat_amount"], 0)
-		self.assertEqual(boxes["7"]["amount"] + boxes["7"]["adjustment"], 0)
-		self.assertEqual(boxes["13"]["vat_amount"], 0)
+		rows = self.exceptions()
+		self.assertNotIn(si.name, rows)
+		self.assertEqual({row["status"] for row in rows.values()}, {"Excluded"})
+		self.assertEqual(len(rows), 4)
 
 	def test_vat_account_without_tax_rate(self):
 		frappe.db.set_value("Account", OUTPUT_VAT, "tax_rate", 0)
 		frappe.clear_cache()
+		set_cutoff(add_days(nowdate(), 30))
 		make_vat_journal_entry(net=100)
 		boxes, _data = self.summary()
 		self.assertEqual((boxes["1"]["amount"], boxes["1"]["vat_amount"]), (0, 15))
@@ -357,8 +401,11 @@ class TestKSAVATReturn(ERPNextTestSuite):
 		boxes, _data = self.summary()
 		self.assertEqual(boxes["1"]["vat_amount"], 0)
 
-		_columns, lines = execute_detail(self.filters(show_excluded=1))
-		self.assertEqual([(line["category"], line["vat_amount"]) for line in lines], [(EXCLUDED, 15)])
+		_columns, lines = execute_detail(self.filters())
+		self.assertEqual(lines, [])
+		_columns, rows = execute_exceptions(self.filters(show_not_reported=1))
+		self.assertEqual([(row["status"], row["vat_amount"]) for row in rows], [("Not reported", 15)])
+		self.assertEqual(self.exceptions(), {})
 
 	def test_cancelled_invoices_are_not_reported(self):
 		make_sales_invoice(rate=1000).cancel()
@@ -518,8 +565,19 @@ def make_sales_invoice(rate, vat_rate=15, customer=CUSTOMER):
 	return si
 
 
-def make_purchase_invoice(rate, bill_no, vat_rate=15, actual_vat=None):
-	"""actual_vat: VAT as an "Actual" amount (Item Wise Tax Detail then stores rate 0)."""
+def make_purchase_invoice(
+	rate,
+	bill_no,
+	vat_rate=15,
+	actual_vat=None,
+	supplier=SUPPLIER,
+	verified=True,
+	attach=True,
+	posting_date=None,
+):
+	"""A complete purchase by default: bill_no, buyer details verified and a file attached. Turn an element
+	off with bill_no=None, verified=False or attach=False; the supplier keeps its tax ID.
+	actual_vat: VAT as an "Actual" amount (Item Wise Tax Detail then stores rate 0)."""
 	tax = {
 		"charge_type": "On Net Total",
 		"category": "Total",
@@ -535,12 +593,13 @@ def make_purchase_invoice(rate, bill_no, vat_rate=15, actual_vat=None):
 		{
 			"doctype": "Purchase Invoice",
 			"company": COMPANY,
-			"supplier": SUPPLIER,
+			"supplier": supplier,
 			"currency": "SAR",
-			"posting_date": nowdate(),
+			"posting_date": posting_date or nowdate(),
 			"set_posting_time": 1,
 			"bill_no": bill_no,
-			"bill_date": nowdate(),
+			"bill_date": posting_date or nowdate(),
+			"sijill_buyer_details_verified": 1 if verified else 0,
 			"credit_to": f"Creditors - {ABBR}",
 			"items": [
 				{
@@ -556,16 +615,116 @@ def make_purchase_invoice(rate, bill_no, vat_rate=15, actual_vat=None):
 	)
 	pi.insert()
 	pi.submit()
+	if attach:
+		attach_file(pi)
 	return pi
 
 
-def make_vat_journal_entry(net, is_opening="No"):
+def attach_file(doc):
+	"""A private file attached to the voucher (the copy of the supplier invoice)."""
+	return frappe.get_doc(
+		{
+			"doctype": "File",
+			"file_name": f"{doc.name}.txt",
+			"content": f"copy of {doc.name}",
+			"attached_to_doctype": doc.doctype,
+			"attached_to_name": doc.name,
+			"is_private": 1,
+		}
+	).insert()
+
+
+def make_supplier(name, tax_id="300000000000003"):
+	if not frappe.db.exists("Supplier", name):
+		frappe.get_doc(
+			{
+				"doctype": "Supplier",
+				"supplier_name": name,
+				"supplier_group": frappe.db.get_value("Supplier Group", {"is_group": 0}, "name"),
+				"tax_id": tax_id,
+			}
+		).insert()
+	return name
+
+
+def make_purchase_return(pi, verified=True, attach=True, keep_bill_no=True):
+	"""Full return (debit note) of a Purchase Invoice, complete by default; keeps the bill no of the original
+	(keep_bill_no=False leaves it empty)."""
+	ret = make_return_doc("Purchase Invoice", pi.name)
+	ret.bill_no = pi.bill_no if keep_bill_no else None
+	ret.sijill_buyer_details_verified = 1 if verified else 0
+	ret.submit()
+	if attach:
+		attach_file(ret)
+	return ret
+
+
+def make_purchase_journal_entry(
+	vat,
+	bill_no,
+	supplier=SUPPLIER,
+	party_type="Supplier",
+	verified=True,
+	attach=True,
+	cheque_no=None,
+	posting_date=None,
+	reduction=False,
+):
+	"""A purchase booked as a Journal Entry: Dr Input VAT and expense, Cr Creditors with a Supplier party row.
+	Complete by default. Turn an element off with bill_no=None, verified=False or attach=False;
+	party_type="Customer" books the credit to a Customer, party_type=None to a bank account (no party).
+	reduction=True reverses every side (Cr Input VAT and expense, Dr Creditors): a purchase that reduces VAT."""
+	net = flt(vat * 100 / 15, 2)
+	expense_side, credit_side = ("credit", "debit") if reduction else ("debit", "credit")
+	credit = {f"{credit_side}_in_account_currency": net + vat, "cost_center": f"Main - {ABBR}"}
+	if party_type == "Supplier":
+		credit.update({"account": f"Creditors - {ABBR}", "party_type": "Supplier", "party": supplier})
+	elif party_type == "Customer":
+		credit.update({"account": f"Debtors - {ABBR}", "party_type": "Customer", "party": CUSTOMER})
+	else:
+		credit["account"] = frappe.db.get_value(
+			"Account", {"company": COMPANY, "account_type": ("in", ["Bank", "Cash"]), "is_group": 0}, "name"
+		)
+	date = posting_date or nowdate()
+	je = frappe.get_doc(
+		{
+			"doctype": "Journal Entry",
+			"company": COMPANY,
+			"posting_date": date,
+			"bill_no": bill_no,
+			"bill_date": date if bill_no else None,
+			"cheque_no": cheque_no,
+			"cheque_date": date if cheque_no else None,
+			"sijill_buyer_details_verified": 1 if verified else 0,
+			"accounts": [
+				{
+					"account": f"Cost of Goods Sold - {ABBR}",
+					f"{expense_side}_in_account_currency": net,
+					"cost_center": f"Main - {ABBR}",
+				},
+				{
+					"account": INPUT_VAT,
+					f"{expense_side}_in_account_currency": vat,
+					"cost_center": f"Main - {ABBR}",
+				},
+				credit,
+			],
+		}
+	)
+	je.insert()
+	je.submit()
+	if attach:
+		attach_file(je)
+	return je
+
+
+def make_vat_journal_entry(net, is_opening="No", posting_date=None):
 	vat = net * 15 / 100
 	je = frappe.get_doc(
 		{
 			"doctype": "Journal Entry",
 			"company": COMPANY,
-			"posting_date": nowdate(),
+			"posting_date": posting_date or nowdate(),
 			"is_opening": is_opening,
 			"cheque_no": "JE-REF-1",
 			"cheque_date": nowdate(),
@@ -635,14 +794,19 @@ def make_bank_vat_journal_entry(vat):
 	return bank
 
 
-def reclass(vat_account, other_account, amount, debit_vat=False):
-	"""Reclassification JE: moves `amount` between a VAT account and a revenue or expense account."""
+def set_cutoff(date):
+	"""KSA VAT Settings "Output VAT from Sales Invoices only, from date" of the test company; None: empty."""
+	frappe.db.set_value("KSA VAT Settings", COMPANY, "output_vat_invoices_only_from", date)
+
+
+def reclass(vat_account, other_account, amount, debit_vat=False, posting_date=None):
+	"""Journal Entry without a party that moves `amount` between a VAT account and a revenue or expense account."""
 	vat_side, other_side = ("debit", "credit") if debit_vat else ("credit", "debit")
 	je = frappe.get_doc(
 		{
 			"doctype": "Journal Entry",
 			"company": COMPANY,
-			"posting_date": nowdate(),
+			"posting_date": posting_date or nowdate(),
 			"accounts": [
 				{
 					"account": vat_account,
