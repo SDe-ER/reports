@@ -628,9 +628,10 @@ class TestVATTotalsAndReports(VATRulesTestBase):
 		self.assertEqual({row["side"] for row in self.exceptions(side="Sales").values()}, {"Sales"})
 		self.assertEqual({row["side"] for row in self.exceptions(side="Purchase").values()}, {"Purchase"})
 
-		everything = self.exceptions(show_not_reported=1)
-		not_reported = [row for row in everything.values() if row["status"] == "Not reported"]
-		self.assertEqual(len(not_reported), 2)
+		# one row per voucher and side: the settlement entry has a Sales and a Purchase row (not keyed by voucher)
+		_columns, everything = execute_exceptions(self.filters(show_not_reported=1))
+		not_reported = [row for row in everything if row["status"] == "Not reported"]
+		self.assertEqual(sorted(row["side"] for row in not_reported), ["Purchase", "Sales"])
 		self.assertEqual({row["failed_codes"] for row in not_reported}, {"NOT_A_TAXABLE_TRANSACTION"})
 		self.assertEqual(
 			{row["side"] for row in self.exceptions(side="Sales", show_not_reported=1).values()}, {"Sales"}
