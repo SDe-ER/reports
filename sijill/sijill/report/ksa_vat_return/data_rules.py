@@ -6,7 +6,13 @@
 Every voucher behind the return is checked for the data a VAT return needs.
 
 Purchase side (input VAT): a voucher that fails any rule is left out of the return and of the detail report
-and is listed in "VAT Documents Requiring Completion" with the status "Excluded". Input VAT is deducted only
+and is listed in "VAT Documents Requiring Completion" with the status "Excluded". The rules are: supplier
+invoice number present and not used twice by the same supplier (only for voucher types that have such a
+field: Purchase Invoice, Journal Entry, Payment Entry), supplier name, valid supplier VAT number, the check
+"Buyer details verified" (only for voucher types that have the custom field: Purchase Invoice and Journal
+Entry) and an attachment. A voucher that reduces input VAT (net VAT below zero) is never left out, because
+excluding it would increase the VAT claim: it stays in the return with the status "Included (warning)" and
+the code REDUCTION_KEPT. Input VAT is deducted only
 with a valid tax invoice in hand (ZATCA Guideline for Tax Invoicing and Records under VAT Provisions v3, May
 2026, sections 9.1 and 9.4); a document received later can be deducted in a later period (Implementing
 Regulations Article 49).
@@ -54,9 +60,10 @@ RULES = {
 		"No attachment (copy of the supplier invoice)",
 		"لا يوجد مرفق (صورة فاتورة المورد)",
 	),
-	"REDUCTION_EXCLUDED": (
-		"Reduces input VAT: excluding it increases the VAT claim. Review it.",
-		"هذا المستند يخفض ضريبة المدخلات: استبعاده يزيد المطالبة بالضريبة. راجعه.",
+	"REDUCTION_KEPT": (
+		"Reduces input VAT: kept in the return although data is missing, because excluding it would increase "
+		"the VAT claim. Complete it.",
+		"يخفض ضريبة المدخلات: بقي في الإقرار رغم نقص البيانات لأن استبعاده يزيد المطالبة. استكمله.",
 	),
 	"CUSTOMER_NAME_MISSING": ("Customer name is missing", "اسم العميل غير موجود"),
 	"CUSTOMER_ID_MISSING": (
@@ -71,6 +78,10 @@ RULES = {
 	"RECLASS_PARTIAL": (
 		"Partial VAT reclassification: not excluded. Review it.",
 		"إعادة تصنيف جزئية للضريبة: لم تُستبعد. راجعها.",
+	),
+	"RECLASS_OTHER_PERIOD": (
+		"VAT reclassification in another period: kept here as a correction in its own period. Review it.",
+		"إعادة تصنيف الضريبة في فترة أخرى: بقيت هنا كتصحيح في فترتها. راجعها.",
 	),
 	"NOT_A_TAXABLE_TRANSACTION": (
 		"Not a taxable transaction: settlement, VAT payment or opening entry",
@@ -136,26 +147,29 @@ def evaluate_lines(lines, company):
 	for key, group in groups.items():
 		first = group[0]
 		if first.category == EXCLUDED:
-			exceptions.append(
-				get_exception_row(group, key[2], STATUS_NOT_REPORTED, ["NOT_A_TAXABLE_TRANSACTION"])
-			)
+			codes = ["NOT_A_TAXABLE_TRANSACTION", *get_flags(flags, key)]
+			exceptions.append(get_exception_row(group, key[2], STATUS_NOT_REPORTED, codes))
 		elif first.category in PURCHASE_CATEGORIES:
 			codes, details = purchases.check(key, group)
 			extra = get_flags(flags, key)
-			if not codes:
-				for line in group:
-					line.update(details)
-				included += group
-				if extra:
-					exceptions.append(get_exception_row(group, key[2], STATUS_WARNING, extra))
-				continue
-			codes += extra
 			vat = sum(flt(line.vat_amount) for line in group)
-			if vat < 0:
-				codes.append("REDUCTION_EXCLUDED")
-			row = get_exception_row(group, key[2], STATUS_EXCLUDED, codes)
-			row.update({k: v for k, v in details.items() if v})
-			exceptions.append(row)
+			if codes and vat >= 0:
+				row = get_exception_row(group, key[2], STATUS_EXCLUDED, codes + extra)
+				row.update({k: v for k, v in details.items() if v})
+				exceptions.append(row)
+				continue
+			if codes:
+				# a reduction of input VAT is never left out: excluding it would increase the VAT claim
+				warning = get_exception_row(group, key[2], STATUS_WARNING, [*codes, *extra, "REDUCTION_KEPT"])
+				warning.update({k: v for k, v in details.items() if v})
+				exceptions.append(warning)
+				marker = get_marker()
+				details = {k: v or marker for k, v in details.items()}
+			elif extra:
+				exceptions.append(get_exception_row(group, key[2], STATUS_WARNING, extra))
+			for line in group:
+				line.update(details)
+			included += group
 		else:
 			codes, details = sales.check(key, group)
 			codes += get_flags(flags, key)
@@ -333,7 +347,10 @@ class PurchaseFacts:
 		tax_id = (master.get("tax_id") or "").strip()
 
 		failed = set()
-		if not bill_no:
+		if bill_field is None:
+			# no supplier invoice number field on this voucher type (for example Expense Claim): rule a is skipped
+			pass
+		elif not bill_no:
 			failed.add("BILL_NO_MISSING")
 		elif supplier and not (voucher_type == "Purchase Invoice" and doc.get("is_return")):
 			holders = self.bill_keys.get((supplier, bill_no.casefold()), set()) | {(voucher_type, voucher_no)}
@@ -343,7 +360,7 @@ class PurchaseFacts:
 			failed.add("SUPPLIER_NAME_MISSING")
 		if not is_valid_vat_number(tax_id):
 			failed.add("SUPPLIER_VAT_INVALID")
-		if not doc.get(BUYER_FIELD):
+		if frappe.get_meta(voucher_type).has_field(BUYER_FIELD) and not doc.get(BUYER_FIELD):
 			failed.add("BUYER_DETAILS_NOT_VERIFIED")
 		if voucher_no not in self.attached.get(voucher_type, set()):
 			failed.add("ATTACHMENT_MISSING")
@@ -427,12 +444,18 @@ def exclude_reclass_pairs(lines, company):
 	"""Take fully reclassified VAT out of the lines. Returns (remaining_lines, pair_rows, flags).
 
 	A reclassification Journal Entry names the Journal Entry whose VAT it reverses in the custom field
-	sijill_reclassification_of. For each (original, VAT account) the VAT of the original and the VAT of all its
-	reclassification entries are summed over all dates, with the sign convention of get_gl_lines. When they cancel
-	exactly, the original line and the reclassification lines on that account leave the lines (any period, both
-	sides) and become pair_rows with the status "Reclassified" and the partner vouchers in `reclass_pair`.
-	Otherwise nothing is removed; flags is {voucher_no: ["RECLASS_PARTIAL"]} for the vouchers involved, to merge
-	with the data rule codes. Other lines are untouched. Works on get_vat_lines output.
+	sijill_reclassification_of. The VAT of the original and of all its reclassification entries is summed over
+	all dates, with the sign convention of get_gl_lines, on every VAT account that a reclassification entry
+	posts to. The pair is removed only when all of these hold:
+	- on every such account the sums cancel exactly (rounded to 2 places);
+	- no chain: the original is not itself a reclassification and no reclassification entry of it is itself
+	  reclassified;
+	- the original and every reclassification entry have lines in `lines` (all inside the report period).
+	Then the lines of the pair on those accounts leave the lines (both sides) and become pair_rows with the
+	status "Reclassified" and the partner vouchers in `reclass_pair`.
+	Otherwise nothing is removed; flags is {voucher_no: [code]} for the members that have lines, to merge with
+	the other codes of the voucher: RECLASS_OTHER_PERIOD when the pair is complete but some member is outside
+	the period, else RECLASS_PARTIAL. Other lines are untouched. Works on get_vat_lines output.
 	"""
 	if not lines or not frappe.get_meta("Journal Entry").has_field(RECLASS_FIELD):
 		return lines, [], {}
@@ -472,25 +495,29 @@ def exclude_reclass_pairs(lines, company):
 	removed = {}  # (voucher_no, account) -> partner vouchers
 	flags = {}
 	for original, names in reclasses.items():
-		# only the accounts the reclassification entries post VAT to; the original's other VAT accounts are untouched
-		pair_accounts = {a for (v, a), vat in totals.items() if v in names and vat}
-		for account in sorted(pair_accounts):
-			original_vat = totals.get((original, account), 0.0)
-			reclass_vat = sum(totals.get((name, account), 0.0) for name in names)
-			is_full = (
-				original in original_links
-				and original not in names
-				and original_links[original] not in names
-				and original_vat != 0
-				and flt(original_vat + reclass_vat, 2) == 0
+		members = [original, *names]
+		pair_accounts = sorted({a for name in names for (v, a), vat in totals.items() if v == name and vat})
+		is_chain = bool(original_links.get(original)) or any(name in reclasses for name in names)
+		is_full = (
+			original in original_links
+			and original not in names
+			and not is_chain
+			and bool(pair_accounts)
+			and all(
+				flt(totals.get((original, a), 0.0) + sum(totals.get((n, a), 0.0) for n in names), 2) == 0
+				for a in pair_accounts
 			)
-			if is_full:
+		)
+		if is_full and all(name in line_entries for name in members):
+			for account in pair_accounts:
 				removed[(original, account)] = sorted(names)
 				for name in names:
 					removed[(name, account)] = [original]
-			else:
-				for name in [original, *names]:
-					flags.setdefault(name, ["RECLASS_PARTIAL"])
+			continue
+		code = "RECLASS_OTHER_PERIOD" if is_full else "RECLASS_PARTIAL"
+		for name in members:
+			if name in line_entries:
+				flags.setdefault(name, [code])
 
 	remaining = []
 	removed_groups = {}
@@ -510,7 +537,6 @@ def exclude_reclass_pairs(lines, company):
 		)
 		row.reclass_pair = ", ".join(partners)
 		pair_rows.append(row)
-	flags = {name: codes for name, codes in flags.items() if name in line_entries}
 	return remaining, pair_rows, flags
 
 

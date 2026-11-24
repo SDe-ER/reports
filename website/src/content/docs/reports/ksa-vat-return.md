@@ -54,8 +54,40 @@ and **VAT Amount**. Open it from the **Sijill** page (apps screen or desktop ico
 - **Entries that only move amounts between the VAT accounts** in KSA VAT Settings: closing a return into the VAT
   Settlement account, paying it, reclassifications between VAT accounts. These are not taxable transactions.
 
-Both are listed in [KSA VAT Return Detail](/reports/reports/ksa-vat-return-detail/) when **Show Excluded Entries**
-is ticked, so every movement on the VAT accounts can be traced.
+Both are listed in the report **VAT Documents Requiring Completion** with the status **Not reported** when
+**Include settlement and opening entries** is ticked, so every movement on the VAT accounts can be traced.
+
+## Data rules
+
+Every voucher behind the return is checked for the data a VAT return needs. Vouchers that need attention are listed
+in **VAT Documents Requiring Completion**, one row per voucher, with the failed rules in English and Arabic.
+
+**Purchases.** A purchase voucher that fails any rule is left out of the return and of the detail report (status
+**Excluded**). Input VAT is deducted only with a valid tax invoice in hand; when the missing data is completed, the
+voucher is counted again. The rules:
+
+- The supplier invoice number is present and is not used on another voucher of the same supplier (only for voucher
+  types that have such a field).
+- The supplier name is present.
+- The supplier VAT number is valid: 15 digits, starting and ending with 3.
+- The check **Buyer details verified on supplier invoice** is ticked (Purchase Invoice and Journal Entry): the
+  supplier invoice shows the full name, VAT number and address of the company.
+- A file is attached to the voucher (for example a copy of the supplier invoice).
+
+A voucher that **reduces** input VAT is never left out, because leaving it out would increase the VAT claim. It
+stays in the return with the status **Included (warning)** and the code `REDUCTION_KEPT`. Complete its data.
+
+**Sales.** A sale is never left out: VAT is due on every taxable sale. Missing customer name, VAT number or other ID
+is only reported, with the status **Included (warning)**.
+
+**Statuses.** Excluded, Included (warning), Not reported, Reclassified.
+
+**Reclassification pairs.** A Journal Entry that reverses the VAT of an earlier Journal Entry names it in the field
+**Reclassification Of**. When the VAT reverses fully on every VAT account, and the original and all its
+reclassification entries are inside the report period, both leave the Amount and Adjustment columns and the detail,
+and are listed with the status **Reclassified**. In all other cases (partial reversal, entries in another period,
+chains) nothing is removed and the entries are flagged `RECLASS_PARTIAL` or `RECLASS_OTHER_PERIOD` for review. The
+Adjustment column then holds only credit notes, debit notes, returns and genuine reductions.
 
 ## Open the transactions behind an amount
 
