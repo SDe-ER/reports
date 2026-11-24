@@ -174,8 +174,9 @@ class TestVATPurchaseRules(VATRulesTestBase):
 		pi = make_purchase_invoice(rate=500, bill_no="K-RET-3", verified=False)
 		ret = make_purchase_return(pi, verified=False)
 		rows = self.exceptions()
-		for voucher in (pi, ret):
-			self.assertEqual(rows[voucher.name]["failed_codes"], "BUYER_DETAILS_NOT_VERIFIED")
+		self.assertEqual(rows[pi.name]["failed_codes"], "BUYER_DETAILS_NOT_VERIFIED")
+		# the return reduces input VAT: its exclusion is flagged as raising the claim
+		self.assertEqual(rows[ret.name]["failed_codes"], "BUYER_DETAILS_NOT_VERIFIED; REDUCTION_EXCLUDED")
 
 	def test_return_without_a_bill_no_uses_the_one_of_the_original(self):
 		pi = make_purchase_invoice(rate=500, bill_no="K-RET-4")
@@ -539,7 +540,9 @@ class TestVATBeforeTheCutoff(VATRulesTestBase):
 		lines = {line["voucher_no"]: line for line in self.detail()}
 		self.assertEqual(set(lines), {pi.name, je.name})
 		self.assertEqual(lines[pi.name]["bill_no"], get_marker())
-		self.assertEqual(lines[je.name]["party_name"], get_marker())
+		# a Journal Entry without a party keeps the name of its bank or cash ledger (display only)
+		self.assertTrue(lines[je.name]["party_name"])
+		self.assertNotEqual(lines[je.name]["party_name"], get_marker())
 		self.assertEqual(lines[je.name]["tax_id"], get_marker())
 		for line in lines.values():
 			for field in MANDATORY:
