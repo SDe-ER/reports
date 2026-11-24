@@ -40,6 +40,11 @@ export default defineConfig({
           items: [{ autogenerate: { directory: "reports" } }],
         },
         {
+          label: "ZATCA",
+          translations: { ar: "هيئة الزكاة" },
+          items: [{ autogenerate: { directory: "zatca" } }],
+        },
+        {
           label: "Releases",
           translations: { ar: "الإصدارات" },
           items: [{ autogenerate: { directory: "releases" } }],
