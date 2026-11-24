@@ -19,3 +19,20 @@ add_to_apps_screen = [
 		"has_permission": "sijill.utils.has_app_permission",
 	}
 ]
+
+fixtures = [
+	{
+		"dt": "Custom Field",
+		"filters": [
+			[
+				"name",
+				"in",
+				[
+					"Purchase Invoice-sijill_buyer_details_verified",
+					"Journal Entry-sijill_buyer_details_verified",
+					"Journal Entry-sijill_reclassification_of",
+				],
+			]
+		],
+	}
+]

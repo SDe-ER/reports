@@ -69,12 +69,19 @@ frappe.query_reports["KSA VAT Return Detail"] = {
 			fieldtype: "Select",
 			options: ["", "Sales Invoice", "Purchase Invoice", "Journal Entry", "Payment Entry"],
 		},
-		{
-			fieldname: "show_excluded",
-			label: __("Show Excluded Entries"),
-			fieldtype: "Check",
-		},
 	],
+
+	onload(report) {
+		report.page.add_inner_button(__("VAT Documents Requiring Completion"), () => {
+			const filters = report.get_values();
+			frappe.set_route("query-report", "VAT Documents Requiring Completion", {
+				company: filters.company,
+				from_date: filters.from_date,
+				to_date: filters.to_date,
+				side: filters.side || "",
+			});
+		});
+	},
 
 	formatter(value, row, column, data, default_formatter) {
 		let formatted = default_formatter(value, row, column, data);

@@ -7,10 +7,10 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 
+from sijill.sijill.report.ksa_vat_return.data_rules import get_rule_result
 from sijill.sijill.report.ksa_vat_return.ksa_vat_return import (
 	PURCHASE_CATEGORIES,
 	SALES_CATEGORIES,
-	get_vat_lines,
 	validate_filters,
 )
 
@@ -18,9 +18,8 @@ from sijill.sijill.report.ksa_vat_return.ksa_vat_return import (
 def execute(filters=None):
 	filters = frappe._dict(filters or {})
 	validate_filters(filters)
-	lines = get_vat_lines(filters, include_excluded=bool(filters.get("show_excluded")))
+	lines, _exceptions = get_rule_result(filters)
 	lines = [line for line in lines if matches(line, filters)]
-	add_tax_ids(lines)
 
 	currency = frappe.get_cached_value("Company", filters.company, "default_currency")
 	data = []
@@ -48,21 +47,6 @@ def matches(line, filters):
 	if filters.get("voucher_type") and line.voucher_type != filters.voucher_type:
 		return False
 	return True
-
-
-def add_tax_ids(lines):
-	for party_type in ("Customer", "Supplier"):
-		parties = {line.party for line in lines if line.party_type == party_type and line.party}
-		if not parties:
-			continue
-		tax_ids = dict(
-			frappe.get_all(
-				party_type, filters={"name": ("in", list(parties))}, fields=["name", "tax_id"], as_list=True
-			)
-		)
-		for line in lines:
-			if line.party_type == party_type:
-				line.tax_id = tax_ids.get(line.party)
 
 
 def get_columns():

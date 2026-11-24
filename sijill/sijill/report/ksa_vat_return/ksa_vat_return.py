@@ -21,7 +21,11 @@ Not reported
   receiving a refund from, the tax authority. VAT that a bank charges on its fees (input VAT
   debited against the bank account) is a purchase and is reported.
 - Opening entries.
-Both are listed by the detail report when "Show Excluded Entries" is set.
+Both are listed by the VAT Documents Requiring Completion report with the status "Not reported".
+
+Data rules
+- A purchase voucher that fails a data rule (see data_rules.py) is left out of the return and of the detail
+  report; it is listed by VAT Documents Requiring Completion. Sales are never left out.
 """
 
 import frappe
@@ -49,7 +53,7 @@ DEFAULT_RATES = (15.0, 5.0)
 def execute(filters=None):
 	filters = frappe._dict(filters or {})
 	validate_filters(filters)
-	lines = get_vat_lines(filters)
+	lines = get_included_lines(filters)
 	currency, tax_id = frappe.get_cached_value("Company", filters.company, ["default_currency", "tax_id"])
 	data = get_data(lines)
 	for row in data:
@@ -242,6 +246,13 @@ def get_rates(lines, categories):
 # ------------------------------------------------------------------------------------------
 # Transaction lines (shared with KSA VAT Return Detail)
 # ------------------------------------------------------------------------------------------
+
+
+def get_included_lines(filters):
+	"""The lines of the return: get_vat_lines without the purchase vouchers that fail a data rule."""
+	from sijill.sijill.report.ksa_vat_return.data_rules import get_rule_result
+
+	return get_rule_result(filters)[0]
 
 
 def get_vat_lines(filters, include_excluded=False):

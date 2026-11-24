@@ -115,9 +115,6 @@ msgstr "مبيعات / مشتريات"
 msgid "Set the VAT accounts of company {0} in {1} first."
 msgstr "حدد حسابات ضريبة القيمة المضافة للشركة {0} في {1} أولاً."
 
-msgid "Show Excluded Entries"
-msgstr "إظهار القيود المستبعدة"
-
 msgid "Standard rated domestic purchases"
 msgstr "المشتريات الخاضعة للنسبة الأساسية"
 
@@ -252,3 +249,57 @@ msgstr "مراجعة"
 msgctxt "KSA VAT Return"
 msgid "Approved by"
 msgstr "اعتماد"
+
+msgid "VAT Documents Requiring Completion"
+msgstr "فواتير ضريبية تحتاج استكمال"
+
+msgid "Include settlement and opening entries"
+msgstr "تضمين قيود التسوية والقيود الافتتاحية"
+
+msgid "Missing - see VAT Documents Requiring Completion"
+msgstr "ناقص - راجع فواتير ضريبية تحتاج استكمال"
+
+msgid "Included (warning)"
+msgstr "مشمولة (تنبيه)"
+
+msgid "Not reported"
+msgstr "غير مُبلَّغ عنها"
+
+msgctxt "KSA VAT Return"
+msgid "Status"
+msgstr "الحالة"
+
+msgctxt "KSA VAT Return"
+msgid "Rule Codes"
+msgstr "رموز القواعد"
+
+msgctxt "KSA VAT Return"
+msgid "Failed Rules (English)"
+msgstr "القواعد غير المستوفاة (إنجليزي)"
+
+msgctxt "KSA VAT Return"
+msgid "Failed Rules (Arabic)"
+msgstr "القواعد غير المستوفاة (عربي)"
+
+msgctxt "KSA VAT Return"
+msgid "Open"
+msgstr "فتح"
+
+msgid "Buyer details verified on supplier invoice"
+msgstr "تم التحقق من بيانات المؤسسة على الفاتورة"
+
+msgid "The supplier invoice shows the company's full name, VAT number and address."
+msgstr "فاتورة المورد تُظهر اسم المؤسسة الكامل ورقمها الضريبي وعنوانها."
+
+msgid "Reclassified"
+msgstr "أُعيد تصنيفها"
+
+msgctxt "KSA VAT Return"
+msgid "Reclassification Pair"
+msgstr "القيد المقابل لإعادة التصنيف"
+
+msgid "Reclassification Of"
+msgstr "إعادة تصنيف للقيد"
+
+msgid "The Journal Entry whose VAT this entry reclassifies."
+msgstr "قيد اليومية الذي يعيد هذا القيد تصنيف ضريبته."
