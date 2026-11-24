@@ -6,6 +6,8 @@ All notable changes to Sijill are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-11-24
+
 ### Added
 - KSA VAT Settings: the date field "Output VAT from Sales Invoices only, from date". Empty: the rules are off and
   the return works as in earlier versions. From that date the KSA VAT Return is built from invoices. Output VAT is counted only from Sales Invoices (also credit and
@@ -103,7 +105,8 @@ All notable changes to Sijill are recorded here. The format follows
   documents, ledger entries or permissions.
 - Rollback: `bench --site <site> uninstall-app sijill` removes the reports and settings only.
 
-[Unreleased]: https://github.com/SDe-ER/reports/compare/v0.1.4...HEAD
+[Unreleased]: https://github.com/SDe-ER/reports/compare/v0.1.5...HEAD
+[0.1.5]: https://github.com/SDe-ER/reports/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/SDe-ER/reports/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/SDe-ER/reports/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/SDe-ER/reports/compare/v0.1.1...v0.1.2
