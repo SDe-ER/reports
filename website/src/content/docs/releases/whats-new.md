@@ -14,6 +14,11 @@ upgraded.
 
 ## Next release
 
+### Documentation
+
+- New section **ZATCA**: the Saudi VAT obligations behind the VAT return report, each with a link to its official
+  ZATCA source.
+
 ### The Sijill page
 
 - New page **Sijill** with the VAT reports and settings in its sidebar, on the apps screen and as a desktop icon.
