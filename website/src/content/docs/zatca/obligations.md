@@ -24,15 +24,13 @@ A business that sells taxable goods or services worth more than SAR 375,000 in t
 After registering it gets a VAT number, and it must add VAT to its invoices and file returns.
 Example: a workshop that sold SAR 400,000 of services this year must register; it is not optional.
 
-Source: [ZATCA FAQ 024](https://zatca.gov.sa/en/HelpCenter/FAQs/Pages/FAQ_024.aspx)
+Source: [ZATCA e-service: VAT registration](https://www.zatca.gov.sa/en/eServices/Pages/eServices_002.aspx), [ZATCA guide for SMEs](https://zatca.gov.sa/en/HelpCenter/guidelines/Documents/%28SMEs%29%20Guidelines%20%E2%80%93%20Zatca%201.pdf)
 
 **2. Voluntary registration is allowed above SAR 187,500.**
 
-A business with sales above SAR 187,500 but below SAR 375,000 does not have to register, but it may choose to. A
-business below SAR 187,500 cannot register at all.
+A business with sales above SAR 187,500 but below SAR 375,000 does not have to register, but it may choose to.
 
-Source: [ZATCA FAQ 024](https://zatca.gov.sa/en/HelpCenter/FAQs/Pages/FAQ_024.aspx),
-[ZATCA e-service: VAT registration](https://www.zatca.gov.sa/en/eServices/Pages/eServices_002.aspx)
+Source: [ZATCA e-service: VAT registration](https://www.zatca.gov.sa/en/eServices/Pages/eServices_002.aspx), [ZATCA guide for SMEs](https://zatca.gov.sa/en/HelpCenter/guidelines/Documents/%28SMEs%29%20Guidelines%20%E2%80%93%20Zatca%201.pdf)
 
 **3. The basic VAT rate is 15%.**
 
@@ -128,7 +126,7 @@ Source: [ZATCA VAT penalties](https://zatca.gov.sa/en/RulesRegulations/VAT/Pages
 Not every paper with an amount on it is a tax invoice. The regulations set mandatory details; an invoice missing
 them is not a valid tax invoice, and the buyer cannot recover its VAT.
 
-Source: [ZATCA FAQ 006](https://zatca.gov.sa/en/HelpCenter/FAQs/Pages/FAQ_006.aspx)
+Source: [Guideline: Tax Invoicing and Records, section 2](https://zatca.gov.sa/en/HelpCenter/guidelines/Documents/Guideline-for-Tax-Invoicing-and-Records-under-VAT-Provisions.pdf)
 
 **15. The mandatory details of a tax invoice.**
 
@@ -159,12 +157,14 @@ Example: work done in March must be invoiced by 15 April.
 
 Source: [Guideline: Tax Invoicing and Records, section 4.5](https://zatca.gov.sa/en/HelpCenter/guidelines/Documents/Guideline-for-Tax-Invoicing-and-Records-under-VAT-Provisions.pdf)
 
-**18. Any document by which VAT is collected is treated as a tax invoice.**
+**18. Any document that shows or collects an amount of VAT is treated as a tax invoice when violations are assessed.**
 
-If you give a customer a document showing VAT and collect that VAT, the VAT is due to ZATCA even if the document is
-not called an invoice. VAT collected from a customer cannot be kept.
+ZATCA explains that, when it considers a violation by a non-registered person who issued tax invoices, any commercial
+or financial document meant to show an amount of tax, or by which tax is collected, is treated as a tax invoice. In
+practice: writing a VAT amount on any document and collecting it from a customer has legal consequences, even if the
+document is not called an invoice.
 
-Source: [Guideline: Tax Invoicing and Records, section 2 (Article 44 of the VAT Law)](https://zatca.gov.sa/en/HelpCenter/guidelines/Documents/Guideline-for-Tax-Invoicing-and-Records-under-VAT-Provisions.pdf)
+Source: [Guideline: Tax Invoicing and Records, section 2](https://zatca.gov.sa/en/HelpCenter/guidelines/Documents/Guideline-for-Tax-Invoicing-and-Records-under-VAT-Provisions.pdf)
 
 ## Credit and debit notes
 
@@ -173,7 +173,7 @@ Source: [Guideline: Tax Invoicing and Records, section 2 (Article 44 of the VAT 
 A credit note reduces an earlier invoice, for a return or a later discount; a debit note increases it. It carries
 the same details as a tax invoice, states its type (credit or debit) and the number of the invoice it amends.
 
-Source: [Guideline: Tax Invoicing and Records, section 7](https://zatca.gov.sa/en/HelpCenter/guidelines/Documents/Guideline-for-Tax-Invoicing-and-Records-under-VAT-Provisions.pdf)
+Source: [Guideline: Tax Invoicing and Records, section 7.1](https://zatca.gov.sa/en/HelpCenter/guidelines/Documents/Guideline-for-Tax-Invoicing-and-Records-under-VAT-Provisions.pdf)
 
 **20. A note is issued within 15 days of the month following the event that requires it.**
 
@@ -242,7 +242,7 @@ Source: [Guideline on Input Tax Deduction, section 9](https://zatca.gov.sa/en/He
 Fees a bank charges as a visible amount (account fees, transfer fees, card fees) carry 15% VAT. Interest and exchange
 margins built into the price are generally exempt and carry no VAT.
 
-Source: [Financial Services Sector Guideline, section 4](https://zatca.gov.sa/en/HelpCenter/guidelines/Documents/Financial-Services-Sector-Guideline.pdf)
+Source: [Financial Services Sector Guideline, section 4.1](https://zatca.gov.sa/en/HelpCenter/guidelines/Documents/Financial-Services-Sector-Guideline.pdf)
 
 **29. VAT on bank fees is recoverable only with a tax invoice from the bank, or an alternative document ZATCA agrees to.**
 

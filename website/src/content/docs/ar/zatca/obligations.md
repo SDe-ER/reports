@@ -22,15 +22,14 @@ sidebar:
 المضافة. بعد التسجيل تحصل على رقم ضريبي، وتصبح ملزمة بإضافة الضريبة على فواتيرها وتقديم الإقرارات.
 مثال: ورشة باعت خدمات بقيمة 400,000 ريال هذه السنة، فالتسجيل عليها واجب وليس اختيارًا.
 
-المصدر: [الأسئلة الشائعة لهيئة الزكاة - رقم 024](https://zatca.gov.sa/en/HelpCenter/FAQs/Pages/FAQ_024.aspx)
+المصدر: [خدمة التسجيل في ضريبة القيمة المضافة](https://www.zatca.gov.sa/en/eServices/Pages/eServices_002.aspx)، [دليل الهيئة للمنشآت الصغيرة والمتوسطة](https://zatca.gov.sa/en/HelpCenter/guidelines/Documents/%28SMEs%29%20Guidelines%20%E2%80%93%20Zatca%201.pdf)
 
 **2. يجوز التسجيل اختياريًا إذا تجاوزت المبيعات 187,500 ريال.**
 
 المنشأة التي مبيعاتها أكثر من 187,500 ريال وأقل من 375,000 ريال غير ملزمة بالتسجيل، لكن يحق لها أن تسجّل
-باختيارها. أما المنشأة التي مبيعاتها أقل من 187,500 ريال فلا يحق لها التسجيل أصلًا.
+باختيارها.
 
-المصدر: [الأسئلة الشائعة لهيئة الزكاة - رقم 024](https://zatca.gov.sa/en/HelpCenter/FAQs/Pages/FAQ_024.aspx)،
-[خدمة التسجيل في ضريبة القيمة المضافة](https://www.zatca.gov.sa/en/eServices/Pages/eServices_002.aspx)
+المصدر: [خدمة التسجيل في ضريبة القيمة المضافة](https://www.zatca.gov.sa/en/eServices/Pages/eServices_002.aspx)، [دليل الهيئة للمنشآت الصغيرة والمتوسطة](https://zatca.gov.sa/en/HelpCenter/guidelines/Documents/%28SMEs%29%20Guidelines%20%E2%80%93%20Zatca%201.pdf)
 
 **3. النسبة الأساسية لضريبة القيمة المضافة 15%.**
 
@@ -124,7 +123,7 @@ sidebar:
 ليست كل ورقة فيها مبلغ تُعد فاتورة ضريبية. اللائحة حددت بيانات إلزامية، وإذا نقصت الفاتورة منها لا تُعد فاتورة
 ضريبية صحيحة، ولا يحق للمشتري خصم ضريبتها.
 
-المصدر: [الأسئلة الشائعة لهيئة الزكاة - رقم 006](https://zatca.gov.sa/en/HelpCenter/FAQs/Pages/FAQ_006.aspx)
+المصدر: [الدليل الإرشادي للفواتير الضريبية والسجلات، القسم 2](https://zatca.gov.sa/ar/HelpCenter/guidelines/Documents/Guideline-for-Tax-Invoicing-and-Records-under-VAT-Provisions.pdf)
 
 **15. البيانات الإلزامية في الفاتورة الضريبية.**
 
@@ -154,12 +153,13 @@ sidebar:
 
 المصدر: [الدليل الإرشادي للفواتير الضريبية والسجلات، القسم 4.5](https://zatca.gov.sa/ar/HelpCenter/guidelines/Documents/Guideline-for-Tax-Invoicing-and-Records-under-VAT-Provisions.pdf)
 
-**18. أي مستند حُصّلت بموجبه ضريبة يُعامل معاملة الفاتورة الضريبية.**
+**18. أي مستند يُظهر مبلغ ضريبة أو تُحصّل بموجبه ضريبة يُعامل معاملة الفاتورة الضريبية عند تطبيق المخالفات.**
 
-إذا أصدرت لعميل مستندًا فيه مبلغ ضريبة وحصّلت الضريبة منه، فهذه الضريبة مستحقة للهيئة حتى لو لم تسمِّ المستند
-"فاتورة". لا يجوز تحصيل ضريبة من العميل ثم عدم توريدها.
+توضّح الهيئة أنه عند النظر في مخالفة شخص غير مسجل أصدر فواتير ضريبية، يُعامل أي مستند تجاري أو مالي يُقصد به إظهار
+مبلغ الضريبة، أو يُحصّل بموجبه مبلغ الضريبة، معاملة الفاتورة الضريبية. المعنى العملي: كتابة مبلغ ضريبة على أي مستند
+وتحصيله من العميل له أثر نظامي، حتى لو لم يُسمَّ المستند "فاتورة".
 
-المصدر: [الدليل الإرشادي للفواتير الضريبية والسجلات، القسم 2 (المادة 44 من النظام)](https://zatca.gov.sa/ar/HelpCenter/guidelines/Documents/Guideline-for-Tax-Invoicing-and-Records-under-VAT-Provisions.pdf)
+المصدر: [الدليل الإرشادي للفواتير الضريبية والسجلات، القسم 2](https://zatca.gov.sa/ar/HelpCenter/guidelines/Documents/Guideline-for-Tax-Invoicing-and-Records-under-VAT-Provisions.pdf)
 
 ## الإشعارات الدائنة والمدينة
 
@@ -168,7 +168,7 @@ sidebar:
 الإشعار الدائن يصدر عند تخفيض فاتورة سابقة، مثل مرتجع أو خصم لاحق، والإشعار المدين عند زيادتها. يجب أن يحمل
 نفس بيانات الفاتورة الضريبية، وأن يذكر نوعه (دائن أو مدين) ورقم الفاتورة الأصلية التي يعدّلها.
 
-المصدر: [الدليل الإرشادي للفواتير الضريبية والسجلات، القسم 7](https://zatca.gov.sa/ar/HelpCenter/guidelines/Documents/Guideline-for-Tax-Invoicing-and-Records-under-VAT-Provisions.pdf)
+المصدر: [الدليل الإرشادي للفواتير الضريبية والسجلات، القسم 7.1](https://zatca.gov.sa/ar/HelpCenter/guidelines/Documents/Guideline-for-Tax-Invoicing-and-Records-under-VAT-Provisions.pdf)
 
 **20. يصدر الإشعار خلال 15 يومًا من الشهر التالي للحدث الذي استوجبه.**
 
@@ -235,7 +235,7 @@ sidebar:
 الرسوم التي يخصمها البنك كمبلغ واضح (رسوم حساب، رسوم تحويل، رسوم بطاقة) عليها ضريبة 15%. أما الفوائد وفروق أسعار
 الصرف المحسوبة ضمن السعر فهي في الغالب معفاة ولا ضريبة عليها.
 
-المصدر: [الدليل الإرشادي لقطاع الخدمات المالية، القسم 4](https://zatca.gov.sa/ar/HelpCenter/guidelines/Documents/Financial-Services-Sector-Guideline.pdf)
+المصدر: [الدليل الإرشادي لقطاع الخدمات المالية، القسم 4.1](https://zatca.gov.sa/ar/HelpCenter/guidelines/Documents/Financial-Services-Sector-Guideline.pdf)
 
 **29. ضريبة رسوم البنك تُخصم فقط بفاتورة ضريبية من البنك، أو بمستند بديل توافق عليه الهيئة.**
 
