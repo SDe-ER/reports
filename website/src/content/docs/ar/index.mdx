@@ -11,12 +11,26 @@ hero:
     - text: ابدأ هنا
       link: /reports/ar/getting-started/introduction/
       icon: left-arrow
+    - text: التزامات هيئة الزكاة
+      link: /reports/ar/zatca/obligations/
+      icon: document
+      variant: secondary
     - text: تصفّح التقارير
       link: /reports/ar/reports/ksa-vat-return/
       variant: minimal
 ---
 
-import { Card, CardGrid, LinkCard } from "@astrojs/starlight/components";
+import { Aside, Card, CardGrid, LinkCard } from "@astrojs/starlight/components";
+
+## مراجع هيئة الزكاة وأهم الالتزامات
+
+<Aside type="tip" title="مبني على قواعد الهيئة الرسمية">
+	تقرير الإقرار يتبع القواعد المنشورة لهيئة الزكاة والضريبة والجمارك. كل التزام بُني عليه التقرير مذكور مع رابط
+	مصدره الرسمي: التسجيل، ومواعيد الإقرار، والتصحيحات، والفاتورة الضريبية، والفوترة الإلكترونية، وخصم ضريبة المدخلات،
+	والاستيراد، والسجلات.
+</Aside>
+
+<LinkCard title="مراجع هيئة الزكاة وأهم الالتزامات" description="التزامات ضريبة القيمة المضافة التي بُني عليها تقرير الإقرار، وكل التزام بمصدره الرسمي." href="/reports/ar/zatca/obligations/" />
 
 ## ماذا يقدّم التطبيق
 
@@ -48,6 +62,7 @@ import { Card, CardGrid, LinkCard } from "@astrojs/starlight/components";
 	<LinkCard title="التثبيت" description="تثبيت التطبيق على Frappe / ERPNext." href="/reports/ar/getting-started/installation/" />
 	<LinkCard title="الإعدادات" description="الإعدادات التي يحتاجها كل تقرير قبل تشغيله." href="/reports/ar/getting-started/configuration/" />
 	<LinkCard title="إقرار ضريبة القيمة المضافة" description="الإقرار السعودي بنداً بنداً." href="/reports/ar/reports/ksa-vat-return/" />
+	<LinkCard title="التزامات هيئة الزكاة" description="المصادر الرسمية لكل قاعدة يتبعها التقرير." href="/reports/ar/zatca/obligations/" />
 	<LinkCard title="الجديد" description="كل تغيير بلغة واضحة." href="/reports/ar/releases/whats-new/" />
 	<LinkCard title="التطوير" description="الاختبارات والفحوص وطريقة إضافة تقرير." href="/reports/ar/getting-started/development/" />
 </CardGrid>

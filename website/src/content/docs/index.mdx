@@ -11,12 +11,26 @@ hero:
     - text: Get started
       link: /reports/getting-started/introduction/
       icon: right-arrow
+    - text: ZATCA obligations
+      link: /reports/zatca/obligations/
+      icon: document
+      variant: secondary
     - text: Browse reports
       link: /reports/reports/ksa-vat-return/
       variant: minimal
 ---
 
-import { Card, CardGrid, LinkCard } from "@astrojs/starlight/components";
+import { Aside, Card, CardGrid, LinkCard } from "@astrojs/starlight/components";
+
+## ZATCA references and key obligations
+
+<Aside type="tip" title="Built on official ZATCA rules">
+	The VAT return report follows the published rules of the Zakat, Tax and Customs Authority. Every obligation it
+	is built on is listed with a link to its official source: registration, filing deadlines, corrections, tax
+	invoices, e-invoicing, input VAT deduction, imports and records.
+</Aside>
+
+<LinkCard title="ZATCA obligations and references" description="The Saudi VAT obligations behind the VAT return report, each with its official ZATCA source." href="/reports/zatca/obligations/" />
 
 ## What the app does
 
@@ -48,6 +62,7 @@ import { Card, CardGrid, LinkCard } from "@astrojs/starlight/components";
 	<LinkCard title="Installation" description="Install the app on a Frappe / ERPNext bench." href="/reports/getting-started/installation/" />
 	<LinkCard title="Configuration" description="Settings each report needs before it runs." href="/reports/getting-started/configuration/" />
 	<LinkCard title="KSA VAT Return" description="The Saudi VAT return, field by field." href="/reports/reports/ksa-vat-return/" />
+	<LinkCard title="ZATCA obligations" description="Official sources for every VAT rule the report follows." href="/reports/zatca/obligations/" />
 	<LinkCard title="What's new" description="Every change, in plain language." href="/reports/releases/whats-new/" />
 	<LinkCard title="Development" description="Tests, checks and how to add a report." href="/reports/getting-started/development/" />
 </CardGrid>
