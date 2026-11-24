@@ -197,6 +197,7 @@ class TestKSAVATReturn(ERPNextTestSuite):
 	def test_vat_charged_by_the_bank_is_excluded(self):
 		"""Input VAT a bank charges on its fees (Dr Input VAT, Cr Bank) is a purchase, not a settlement. It has
 		no supplier and no invoice data, so the data rules leave it out and the exceptions report lists it."""
+		set_cutoff(add_days(nowdate(), -400))
 		bank = frappe.db.get_value(
 			"Account", {"company": COMPANY, "account_type": ("in", ["Bank", "Cash"]), "is_group": 0}, "name"
 		)
@@ -286,6 +287,7 @@ class TestKSAVATReturn(ERPNextTestSuite):
 		self.assertEqual((boxes["7"]["amount"], boxes["7"]["vat_amount"]), (0, 0))
 
 	def test_bank_name_on_entries_without_a_party(self):
+		set_cutoff(add_days(nowdate(), -400))
 		bank = make_bank_vat_journal_entry(30)
 
 		# an entry without a supplier is left out of the detail; the exceptions report names the bank
@@ -299,6 +301,7 @@ class TestKSAVATReturn(ERPNextTestSuite):
 
 	def test_bank_name_from_the_bank_account(self):
 		"""A row linked to a Bank Account shows the Bank's name, not Bank Account.account_name (the holder)."""
+		set_cutoff(add_days(nowdate(), -400))
 		bank_ledger = make_bank_ledger("_Test KSA Bank Ledger")
 		if not frappe.db.exists("Bank", "_Test KSA Bank"):
 			frappe.get_doc({"doctype": "Bank", "bank_name": "_Test KSA Bank"}).insert()
@@ -343,6 +346,7 @@ class TestKSAVATReturn(ERPNextTestSuite):
 	def test_reclassification_entries_are_left_out(self):
 		"""A Journal Entry with output VAT and the entry that reverses it (no supplier or customer) both leave
 		the return; so do a bank VAT entry and the unlinked entry that reverses it (Dr expense / Cr Input VAT)."""
+		set_cutoff(add_days(nowdate(), -400))
 		si = make_sales_invoice(rate=1000)
 		before, _data = self.summary()
 		make_vat_journal_entry(net=100)
@@ -643,10 +647,11 @@ def make_supplier(name, tax_id="300000000000003"):
 	return name
 
 
-def make_purchase_return(pi, verified=True, attach=True):
-	"""Full return (debit note) of a Purchase Invoice, complete by default; keeps the bill no of the original."""
+def make_purchase_return(pi, verified=True, attach=True, keep_bill_no=True):
+	"""Full return (debit note) of a Purchase Invoice, complete by default; keeps the bill no of the original
+	(keep_bill_no=False leaves it empty)."""
 	ret = make_return_doc("Purchase Invoice", pi.name)
-	ret.bill_no = pi.bill_no
+	ret.bill_no = pi.bill_no if keep_bill_no else None
 	ret.sijill_buyer_details_verified = 1 if verified else 0
 	ret.submit()
 	if attach:

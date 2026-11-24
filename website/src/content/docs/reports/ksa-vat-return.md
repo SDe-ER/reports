@@ -61,15 +61,16 @@ Both are listed in the report **VAT Documents Requiring Completion** with the st
 
 The return is built from invoices. The rules start on the date set in
 [KSA VAT Settings](/reports/getting-started/configuration/) (**Output VAT from Sales Invoices only, from date**). When
-the date is empty the rules apply to every date. Lines before the date are never left out; missing data is only
+the date is empty the rules are off and the return works as in earlier versions on every date. Lines before the date are never left out; missing data is only
 listed with the status **Included (warning)**.
 
 Vouchers that need attention are listed in **VAT Documents Requiring Completion**, one row per voucher, with the failed
 rules in English and Arabic.
 
 **Sales (from the date on).** Output VAT is counted only from Sales Invoices, including credit and debit notes. Any
-other voucher with output VAT, for example a Journal Entry, is left out of the return and the detail and listed with
-the status **Excluded** and the code `OUTPUT_VAT_BY_JOURNAL_ENTRY`. A Sales Invoice is never left out: missing customer
+other voucher with output VAT is left out of the return and the detail and listed with the status **Excluded**:
+`OUTPUT_VAT_BY_JOURNAL_ENTRY` for a Journal Entry, `OUTPUT_VAT_SOURCE_NOT_ALLOWED` for other vouchers, plus
+`OUTPUT_REDUCTION_EXCLUDED` when it reduces output VAT (issue a credit note instead). A Sales Invoice is never left out: missing customer
 name, VAT number or other ID is only reported, with the status **Included (warning)**.
 
 **Purchases (from the date on).** Input VAT is counted only from Purchase Invoices and Journal Entries; any other
@@ -77,8 +78,12 @@ voucher is left out (`INPUT_VAT_SOURCE_NOT_ALLOWED`). A voucher that fails any o
 and of the detail report and listed with the status **Excluded**:
 
 - **a.** A supplier is set and has a name (`SUPPLIER_MISSING`).
-- **b.** The supplier invoice number is present and not used on another voucher of the same supplier
-  (`BILL_NO_MISSING`, `BILL_NO_DUPLICATE`).
+- **b.** The supplier invoice number is real: not empty, not a placeholder (`0`, `-`, `--`, `.`, `N/A`, `NA`, `none`,
+  and the Arabic words for "none"), and not equal to the system voucher number (`BILL_NO_MISSING`). It is not used on
+  another voucher of the same supplier (`BILL_NO_DUPLICATE`). Numbers are compared without case and without any
+  space, so `INV 12` and `inv12` are the same. Every copy is excluded. A Journal Entry counts as a copy only when it
+  debits input VAT. Purchase Invoice returns are exempt from the duplicate check, because they normally carry the
+  number of the original invoice (a return uses the original's number and buyer check when its own are empty).
 - **c.** The supplier VAT number is valid: 15 digits, starting and ending with 3 (`SUPPLIER_VAT_INVALID`).
 - **d.** The check **Buyer details verified on supplier invoice** is ticked: the supplier invoice shows the full name,
   VAT number and address of the company (`BUYER_DETAILS_NOT_VERIFIED`).

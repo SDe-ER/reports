@@ -88,9 +88,6 @@ frappe.query_reports["KSA VAT Return Detail"] = {
 		if (column.fieldname === "category" && value) {
 			formatted = __(value);
 		}
-		if (data && data.remarks && column.fieldname !== "remarks") {
-			formatted = `<span class="text-muted">${formatted}</span>`;
-		}
 		return formatted;
 	},
 };

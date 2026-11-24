@@ -60,8 +60,8 @@ class VATRulesTestBase(ERPNextTestSuite):
 		make_settings()
 		make_parties()
 		make_item()
-		# default: the rules apply to every date
-		set_cutoff(None)
+		# the rules apply to every date of these tests; an empty cutoff would switch them off
+		set_cutoff(add_days(nowdate(), -400))
 		# the duplicate rule is ours; ERPNext's own uniqueness check would stop the second invoice
 		frappe.db.set_single_value("Accounts Settings", "check_supplier_invoice_uniqueness", 0)
 
@@ -154,6 +154,65 @@ class TestVATPurchaseRules(VATRulesTestBase):
 		boxes = self.boxes()
 		self.assertEqual((boxes["7"]["amount"], boxes["7"]["adjustment"]), (500, -500))
 		self.assertEqual(boxes["7"]["vat_amount"], 0)
+
+	def test_reversing_journal_entry_does_not_make_the_invoice_a_duplicate(self):
+		"""A Journal Entry counts for the duplicate check only when it debits input VAT."""
+		pi = make_purchase_invoice(rate=500, bill_no="K-REV-1")
+		je = make_purchase_journal_entry(vat=30, bill_no="K-REV-1", reduction=True)
+		self.assertEqual(self.exceptions(), {})
+		self.assertEqual({pi.name, je.name}, self.detail_vouchers())
+		self.assertEqual(self.boxes()["7"]["vat_amount"], 45)
+
+	def test_return_passes_the_buyer_check_of_the_original(self):
+		pi = make_purchase_invoice(rate=500, bill_no="K-RET-2")
+		ret = make_purchase_return(pi, verified=False)
+		self.assertEqual(ret.get(BUYER_FIELD), 0)
+		self.assertEqual(self.exceptions(), {})
+		self.assertIn(ret.name, self.detail_vouchers())
+
+	def test_return_of_an_unverified_original_is_excluded_too(self):
+		pi = make_purchase_invoice(rate=500, bill_no="K-RET-3", verified=False)
+		ret = make_purchase_return(pi, verified=False)
+		rows = self.exceptions()
+		for voucher in (pi, ret):
+			self.assertEqual(rows[voucher.name]["failed_codes"], "BUYER_DETAILS_NOT_VERIFIED")
+
+	def test_return_without_a_bill_no_uses_the_one_of_the_original(self):
+		pi = make_purchase_invoice(rate=500, bill_no="K-RET-4")
+		ret = make_purchase_return(pi, keep_bill_no=False)
+		self.assertEqual(self.exceptions(), {})
+		line = next(line for line in self.detail() if line["voucher_no"] == ret.name)
+		self.assertEqual(line["bill_no"], "K-RET-4")
+
+	def test_bill_no_duplicate_ignores_case_and_inner_spaces(self):
+		first = make_purchase_invoice(rate=500, bill_no="INV 55")
+		second = make_purchase_invoice(rate=200, bill_no="inv55")
+		rows = self.exceptions()
+		for pi in (first, second):
+			self.assertEqual(
+				(rows[pi.name]["status"], rows[pi.name]["failed_codes"]), ("Excluded", "BILL_NO_DUPLICATE")
+			)
+
+	def test_placeholder_bill_numbers_are_missing(self):
+		for index, value in enumerate(
+			("0", "-", "--", ".", "N/A", "NA", "none", "لا يوجد", "بدون", "", "   ")
+		):
+			with self.subTest(value=value):
+				pi = make_purchase_invoice(rate=100, bill_no=value)
+				row = self.exceptions()[pi.name]
+				self.assertEqual((row["status"], row["failed_codes"]), ("Excluded", "BILL_NO_MISSING"), index)
+
+	def test_bill_no_equal_to_the_invoice_name_is_missing(self):
+		pi = make_purchase_invoice(rate=500, bill_no="K-OWN-1")
+		frappe.db.set_value("Purchase Invoice", pi.name, "bill_no", pi.name)
+		self.assert_purchase_excluded(pi, "BILL_NO_MISSING")
+
+	def test_placeholders_are_not_duplicates_of_each_other(self):
+		first = make_purchase_invoice(rate=500, bill_no="-")
+		second = make_purchase_invoice(rate=200, bill_no="-")
+		rows = self.exceptions()
+		for pi in (first, second):
+			self.assertEqual(rows[pi.name]["failed_codes"], "BILL_NO_MISSING")
 
 	def test_supplier_missing_on_invoice(self):
 		pi = make_purchase_invoice(rate=500, bill_no="K-NAME-1")
@@ -345,12 +404,24 @@ class TestVATSalesRules(VATRulesTestBase):
 		make_vat_journal_entry(net=100)
 		self.assertEqual(self.boxes()["1"]["vat_amount"], 0)
 
-	def test_empty_cutoff_applies_the_rules_to_every_date(self):
+	def test_empty_cutoff_switches_the_rules_off(self):
+		"""Empty: the earlier behaviour. Nothing is left out; gaps are only listed as a warning."""
 		set_cutoff(None)
 		self.assertIsNone(get_rules_from_date(COMPANY))
+		pi = make_purchase_invoice(rate=500, bill_no=None, verified=False)
 		je = make_vat_journal_entry(net=100)
-		self.assertEqual(self.boxes()["1"]["vat_amount"], 0)
-		self.assertEqual(self.exceptions()[je.name]["failed_codes"], "OUTPUT_VAT_BY_JOURNAL_ENTRY")
+		reversal = reclass(OUTPUT_VAT, SALES, 15, debit_vat=True)
+
+		boxes = self.boxes()
+		self.assertEqual((boxes["7"]["amount"], boxes["7"]["vat_amount"]), (500, 75))
+		self.assertEqual((boxes["1"]["amount"], boxes["1"]["vat_amount"]), (100, 0))
+		self.assertEqual(boxes["1"]["adjustment"], -100)
+		self.assertTrue({pi.name, je.name, reversal.name} <= self.detail_vouchers())
+		rows = self.exceptions()
+		self.assertEqual(rows[pi.name]["status"], "Included (warning)")
+		self.assertEqual(self.codes(rows[pi.name])[:2], ["BILL_NO_MISSING", "BUYER_DETAILS_NOT_VERIFIED"])
+		self.assertEqual(rows[reversal.name]["status"], "Included (warning)")
+		self.assertNotIn("Excluded", {row["status"] for row in rows.values()})
 
 	def test_cutoff_setting_is_read(self):
 		set_cutoff(add_days(nowdate(), 5))
@@ -368,11 +439,15 @@ class TestVATSalesRules(VATRulesTestBase):
 			self.assertEqual(boxes[no], before[no], no)
 		self.assertTrue({original.name, reversal.name}.isdisjoint(self.detail_vouchers()))
 		rows = self.exceptions()
-		for voucher in (original, reversal):
-			self.assertEqual(
-				(rows[voucher.name]["status"], rows[voucher.name]["failed_codes"]),
-				("Excluded", "OUTPUT_VAT_BY_JOURNAL_ENTRY"),
-			)
+		self.assertEqual(
+			(rows[original.name]["status"], rows[original.name]["failed_codes"]),
+			("Excluded", "OUTPUT_VAT_BY_JOURNAL_ENTRY"),
+		)
+		# a reversal reduces output VAT: excluding it lowers the VAT due, so it is flagged
+		self.assertEqual(
+			(rows[reversal.name]["status"], self.codes(rows[reversal.name])),
+			("Excluded", ["OUTPUT_VAT_BY_JOURNAL_ENTRY", "OUTPUT_REDUCTION_EXCLUDED"]),
+		)
 
 	def test_credit_note_shows_in_adjustment(self):
 		si = make_sales_invoice(rate=1000)
@@ -448,14 +523,29 @@ class TestVATBeforeTheCutoff(VATRulesTestBase):
 			for field in MANDATORY:
 				self.assertTrue(line[field], field)
 
-	def test_bank_charge_before_the_cutoff_is_counted(self):
+	def test_bank_charge_before_the_cutoff_is_counted_with_the_bank_name(self):
 		set_cutoff(add_days(nowdate(), 1))
-		make_bank_vat_journal_entry(30)
+		bank = make_bank_vat_journal_entry(30)
 		boxes = self.boxes()
 		self.assertEqual((boxes["7"]["amount"], boxes["7"]["vat_amount"]), (200, 30))
-		self.assertEqual(len(self.detail()), 1)
+		lines = self.detail()
+		self.assertEqual(len(lines), 1)
+		self.assertEqual(lines[0]["party_name"], frappe.db.get_value("Account", bank, "account_name"))
+		self.assertEqual(lines[0]["tax_id"], get_marker())
 		for field in MANDATORY:
-			self.assertTrue(self.detail()[0][field], field)
+			self.assertTrue(lines[0][field], field)
+
+	def test_journal_entry_shows_its_cheque_no_before_the_cutoff(self):
+		set_cutoff(add_days(nowdate(), 1))
+		je = make_purchase_journal_entry(vat=30, bill_no=None, cheque_no="CHQ-9")
+		line = next(line for line in self.detail() if line["voucher_no"] == je.name)
+		self.assertEqual(line["bill_no"], "CHQ-9")
+		self.assertEqual(self.exceptions()[je.name]["status"], "Included (warning)")
+
+	def test_detail_columns(self):
+		columns = [column["fieldname"] for column in execute_detail(self.filters())[0]]
+		self.assertEqual(columns[columns.index("voucher_no") + 1], "bill_no")
+		self.assertNotIn("remarks", columns)
 
 
 class TestVATTotalsAndReports(VATRulesTestBase):

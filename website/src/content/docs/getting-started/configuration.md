@@ -19,7 +19,7 @@ Saudi Arabia and list its accounts:
 **Output VAT from Sales Invoices only, from date** (optional): from this date the VAT return takes output VAT only from
 Sales Invoices and counts purchase VAT only from complete Purchase Invoices and Journal Entries (see
 [KSA VAT Return](/reports/reports/ksa-vat-return/#data-rules)). Before the date the return works as before. Leave it
-empty to apply the rules to every date.
+empty to switch the rules off: the return then works as in earlier versions on every date.
 
 Rules checked when you save:
 

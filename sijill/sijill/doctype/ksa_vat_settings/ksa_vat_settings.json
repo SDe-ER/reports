@@ -28,7 +28,7 @@
    "reqd": 1
   },
   {
-   "description": "From this date the return takes output VAT only from Sales Invoices and counts purchase VAT only from complete Purchase Invoices and Journal Entries. Before it the return works as before. Empty: the rules apply to every date.",
+   "description": "From this date the return takes output VAT only from Sales Invoices and counts purchase VAT only from complete Purchase Invoices and Journal Entries. Before it the return works as before. Empty: the rules are off and the return works as in earlier versions.",
    "fieldname": "output_vat_invoices_only_from",
    "fieldtype": "Date",
    "label": "Output VAT from Sales Invoices only, from date"

@@ -68,6 +68,6 @@ def get_ksa_vat_accounts(company):
 
 def get_rules_from_date(company):
 	"""The date from which the KSA VAT Return applies the data rules (output VAT from Sales Invoices only,
-	purchase VAT from complete Purchase Invoices and Journal Entries). None: the rules apply to every date."""
+	purchase VAT from complete Purchase Invoices and Journal Entries). None: the rules are off."""
 	value = frappe.db.get_value("KSA VAT Settings", company, "output_vat_invoices_only_from")
 	return getdate(value) if value else None

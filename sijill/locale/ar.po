@@ -294,5 +294,5 @@ msgstr "فاتورة المورد تُظهر اسم المؤسسة الكامل 
 msgid "Output VAT from Sales Invoices only, from date"
 msgstr "ضريبة المخرجات من فواتير المبيعات فقط، اعتباراً من تاريخ"
 
-msgid "From this date the return takes output VAT only from Sales Invoices and counts purchase VAT only from complete Purchase Invoices and Journal Entries. Before it the return works as before. Empty: the rules apply to every date."
-msgstr "من هذا التاريخ يأخذ الإقرار ضريبة المخرجات من فواتير المبيعات فقط، ويحتسب ضريبة المشتريات من فواتير المشتريات وقيود اليومية المكتملة فقط. قبله يعمل الإقرار كما كان. إذا ترك فارغاً تُطبق القواعد على كل التواريخ."
+msgid "From this date the return takes output VAT only from Sales Invoices and counts purchase VAT only from complete Purchase Invoices and Journal Entries. Before it the return works as before. Empty: the rules are off and the return works as in earlier versions."
+msgstr "من هذا التاريخ يأخذ الإقرار ضريبة المخرجات من فواتير المبيعات فقط، ويحتسب ضريبة المشتريات من فواتير المشتريات وقيود اليومية المكتملة فقط. قبله يعمل الإقرار كما كان. إذا ترك فارغاً تُعطَّل القواعد ويعمل الإقرار كما في الإصدارات السابقة."

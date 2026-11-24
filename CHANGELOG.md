@@ -7,12 +7,15 @@ All notable changes to Sijill are recorded here. The format follows
 ## [Unreleased]
 
 ### Added
-- KSA VAT Settings: the date field "Output VAT from Sales Invoices only, from date". From that date (empty: every
-  date) the KSA VAT Return is built from invoices. Output VAT is counted only from Sales Invoices (also credit and
-  debit notes); a Journal Entry or other voucher with output VAT is left out and listed with the code
-  OUTPUT_VAT_BY_JOURNAL_ENTRY. Input VAT is counted only from Purchase Invoices and Journal Entries
-  (INPUT_VAT_SOURCE_NOT_ALLOWED for other vouchers) that pass four rules: a supplier with a name, a supplier invoice
-  number that is not used twice by the same supplier, a valid supplier VAT number (15 digits, starts and ends with 3)
+- KSA VAT Settings: the date field "Output VAT from Sales Invoices only, from date". Empty: the rules are off and
+  the return works as in earlier versions. From that date the KSA VAT Return is built from invoices. Output VAT is counted only from Sales Invoices (also credit and
+  debit notes); another voucher with output VAT is left out and listed with the code
+  OUTPUT_VAT_BY_JOURNAL_ENTRY (Journal Entry) or OUTPUT_VAT_SOURCE_NOT_ALLOWED, plus OUTPUT_REDUCTION_EXCLUDED when it
+  reduces output VAT. Input VAT is counted only from Purchase Invoices and Journal Entries
+  (INPUT_VAT_SOURCE_NOT_ALLOWED for other vouchers) that pass four rules: a supplier with a name, a real supplier invoice
+  number (not empty, not a placeholder such as 0, - or N/A, not the voucher number) that is not used twice by the same
+  supplier (compared without case and spaces; every copy is excluded; Journal Entries count only when they debit input
+  VAT; Purchase Invoice returns are exempt from the duplicate check), a valid supplier VAT number (15 digits, starts and ends with 3)
   and the new check "Buyer details verified on supplier invoice". A missing attachment is only a warning. An excluded
   voucher that reduces input VAT also gets REDUCTION_EXCLUDED. Before the date nothing is left out; missing data is
   only listed as "Included (warning)".

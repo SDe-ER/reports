@@ -23,8 +23,9 @@ Not reported
 - Opening entries.
 Both are listed by the VAT Documents Requiring Completion report with the status "Not reported".
 
-Data rules (see data_rules.py)
-- From the date set in KSA VAT Settings (empty: every date) output VAT is counted only from Sales Invoices, and
+Data rules (see data_rules.py). From the date set in KSA VAT Settings, input VAT without a supplier (for
+example VAT a bank charges on its fees) is left out by the rules.
+- From the date set in KSA VAT Settings (empty: the rules are off) output VAT is counted only from Sales Invoices, and
   input VAT only from Purchase Invoices and Journal Entries that pass the supplier, invoice number, supplier VAT
   number and buyer details rules. Other lines are left out of the return and of the detail report and are listed
   by VAT Documents Requiring Completion. Before the date nothing is left out.

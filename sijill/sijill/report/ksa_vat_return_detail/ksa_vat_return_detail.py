@@ -118,5 +118,4 @@ def get_columns():
 			"width": 150,
 		},
 		{"fieldname": "vat_account", "label": _("VAT Account"), "fieldtype": "Data", "width": 180},
-		{"fieldname": "remarks", "label": _("Remarks"), "fieldtype": "Data", "width": 220},
 	]
